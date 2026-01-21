@@ -15,21 +15,24 @@
     - Handle startup + shutdown --> look at prev. BMS
 */
 
-#define const OVERCURR_THRESHOLD
-#define const UNDERVOLT_THRESHOLD
+int num_readings = 0;
 
 // Function stubs
 uint16_t get_voltage(int cell);
 uint16_t get_temp(int cell);
 
-void battery_monitor(void) { // frequency?
+bool battery_monitor(void)
+{ // frequency?
 
     if (!bms_init()) return false;
+
+    num_readings++;
     
 }
 
 
-bool bms_init() {
+bool bms_init() 
+{
 
     if (!core_clock_init()) return false;
     core_RTT_init();
@@ -41,3 +44,25 @@ bool bms_init() {
     return true;
 
 }
+
+bool check_voltage() 
+{
+    uint16_t volt = get_voltage(num_readings)
+    
+}
+
+bool check_temp()
+{
+
+}
+
+bool check_current() 
+{
+
+}
+
+bool check_fault() 
+{
+    // ?
+}
+

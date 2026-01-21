@@ -1,14 +1,14 @@
-#include "main.h" // not used?
+#include "main.h"
 
 #include <stdbool.h>
 #include <stdio.h>
 
 #include "can.h"
-#include "clock.h" // not used?
+#include "clock.h"
 #include "gpio.h"
-#include "error_handler.h" // not used?
+#include "error_handler.h"
 #include "boot.h"
-#include "core_config.h" // not used?
+#include "core_config.h"
 
 #include "FreeRTOS.h"
 #include "queue.h"
@@ -16,16 +16,11 @@
 
 #include <stm32g4xx_hal.h>
 
-#include "BMS.h"
-#include "AppCAN.h"
+MAIN_BUS mainBus = {0};
 
-#define TASK_PRIORITY_HEARTBEAT (tskIDLE_PRIORITY + 1)
-#define CAN_RX_PRIORITY (tskIDLE_PRIOIRITY + 2)
-#define CAN_TX_PRIORITY (tskIDLE_PRIOIRITY + 2)
 
-void hardfault_error_handler();
-
-void heartbeat_task(void *pvParameters) {
+void heartbeat_task(void *pvParameters) 
+{
     (void) pvParameters;
     while(true) {
         core_GPIO_toggle_heartbeat();
@@ -33,7 +28,8 @@ void heartbeat_task(void *pvParameters) {
     }
 }
 
-int main(void) {
+int main(void) 
+{
     HAL_Init();
 
     // Drivers
@@ -46,7 +42,7 @@ int main(void) {
 
     int err = xTaskCreate(heartbeat_task, "heartbeat", 1000, NULL, 4, NULL);
     if (err != pdPASS) {
-        error_handler(); // change error handler?
+        error_handler();
     }
 
     NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
@@ -55,22 +51,16 @@ int main(void) {
     vTaskStartScheduler();
 
     // we should not get here ever
-    error_handler(); // change error handler?
+    error_handler();
     return 1;
 }
 
 // Called when stack overflows from rtos
 // Not needed in header, since included in FreeRTOS-Kernel/include/task.h
-void vApplicationStackOverflowHook( TaskHandle_t xTask, char *pcTaskName) {
+void vApplicationStackOverflowHook( TaskHandle_t xTask, char *pcTaskName) 
+{
     (void) xTask;
     (void) pcTaskName;
 
     error_handler();
-}
-
-void hardfault_error_handler() { // use vs template's error_handler()?
-    while(1) {
-        core_GPIO_toggle_heartbeat();
-        for (unsigned long long i = 0; i < 200000; i++); // max val?
-    }
 }

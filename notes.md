@@ -4,6 +4,7 @@ QUESTIONS:
   - Drain
   - Other stuff?
 - Frequency of monitoring functions? 10Hz? 100Hz?
+- Which CAN buses does this communicate over?
 
 NOTES:
 - Keep the idea of tolerances in mind. Find in BMS/src/app/DriveMonitor.c in prev. code
@@ -33,7 +34,7 @@ static uint16_t temps[NUM_THERMS];
 ```
 
  ** Expose read-only getters**
-
+    
 Not direct array access, but safe functions:
 
 ```c
