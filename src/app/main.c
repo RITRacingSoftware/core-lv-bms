@@ -6,7 +6,7 @@
 #include "can.h"
 #include "clock.h"
 #include "gpio.h"
-#include "error_handler.h"
+#include "error_handler.h" //?
 #include "boot.h"
 #include "core_config.h"
 
@@ -16,8 +16,31 @@
 
 #include <stm32g4xx_hal.h>
 
+#define BMS_100HZ_PRIORITY (tskIDLE_PRIORITY + 1)
+#define CAN_RX_PRIORITY (tskIDLE_PRIORITY + 2)
+#define CAN_TX_PRIORITY (tskIDLE_PRIORITY + 2)
+#define TASK_PRIORITY_HEARTBEAT (tskIDLE_PRIORITY + 4)
+
 MAIN_BUS mainBus = {0};
 
+void hardfault_error_handler();
+
+void task_CAN_tx_main(void)
+{
+    (void) pvParameters;
+    CAN_tx_main();
+    if (!CAN_tx_main()) hardfault_error_handler();
+}
+
+void task_CAN_rx_main(void *pvParameters)
+{
+    while(true) {CAN_rx_main();}
+}
+
+void task_100Hz(void *pvParameters)
+{
+    void (*pvParameters)
+}
 
 void heartbeat_task(void *pvParameters) 
 {
@@ -30,29 +53,7 @@ void heartbeat_task(void *pvParameters)
 
 int main(void) 
 {
-    HAL_Init();
-
-    // Drivers
-    core_heartbeat_init(GPIOA, GPIO_PIN_5);
-    core_GPIO_set_heartbeat(GPIO_PIN_RESET);
-
-    if (!core_clock_init()) error_handler();
-    if (!core_CAN_init(CORE_BOOT_FDCAN, 1000000)) error_handler();
-    core_boot_init();
-
-    int err = xTaskCreate(heartbeat_task, "heartbeat", 1000, NULL, 4, NULL);
-    if (err != pdPASS) {
-        error_handler();
-    }
-
-    NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
-
-    // hand control over to FreeRTOS
-    vTaskStartScheduler();
-
-    // we should not get here ever
-    error_handler();
-    return 1;
+    if (!bms_init)
 }
 
 // Called when stack overflows from rtos
@@ -62,5 +63,14 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask, char *pcTaskName)
     (void) xTask;
     (void) pcTaskName;
 
-    error_handler();
+    hardfault_error_handler();
+}
+
+void hardfault_error_handler()
+{
+    while(1)
+    {
+        toggle_heartbeat();
+        for (unsigned long long  i = 0; i < 200000; i++);
+    }
 }

@@ -21,12 +21,10 @@ int num_readings = 0;
 uint16_t get_voltage(int cell);
 uint16_t get_temp(int cell);
 
-bool battery_monitor(void)
+bool BMS_100Hz(void)
 { // frequency?
 
-    if (!bms_init()) return false;
-
-    num_readings++;
+    // if (!bms_init()) return false;
     
 }
 
