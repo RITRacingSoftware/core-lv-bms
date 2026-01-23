@@ -29,7 +29,7 @@ bool BMS_100Hz(void)
 }
 
 
-bool bms_init() 
+bool LVBMS_init() 
 {
 
     if (!core_clock_init()) return false;
@@ -41,6 +41,14 @@ bool bms_init()
     
     return true;
 
+}
+
+void LVBMS_Task_Update()
+{
+    // update BMS stuff
+    // update CAN
+    // update GPIO
+    // USART?
 }
 
 bool check_voltage() 

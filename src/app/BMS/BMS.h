@@ -2,5 +2,4 @@
 
 #include <stdbool.h>
 
-bool BMS_init();
-bool battery_monitor();
+bool LVBMS_init();
