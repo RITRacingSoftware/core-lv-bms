@@ -1,8 +1,8 @@
 #include "main.h"
 
 #include <stm32g4xx_hal.h>
-#include <stdbool.h>
 
+#include <stdbool.h>
 #include <stdio.h>
 
 #include "BMS.h"
@@ -24,8 +24,6 @@
 #define CAN_RX_PRIORITY (tskIDLE_PRIORITY + 2)
 #define CAN_TX_PRIORITY (tskIDLE_PRIORITY + 2)
 #define HEARTBEAT_PRIORITY (tskIDLE_PRIORITY + 4)
-
-void hardfault_error_handler();
 
 void task_CAN_tx(void)
 {
@@ -50,7 +48,7 @@ void task_100Hz(void *pvParameters)
     }
 }
 
-void heartbeat_task(void *pvParameters) 
+void task_heartbeat(void *pvParameters) // heartbeat task defined where?
 {
     (void) pvParameters;
     while(true) {
@@ -61,7 +59,8 @@ void heartbeat_task(void *pvParameters)
 
 int main(void) 
 {
-    if (!LVBMS_init()) hardfault_error_handler();
+    // init here or in 100z task in BMS?
+    if (!LVBMS_init()) hardfault_error_handler(); 
 
     int err;
 
@@ -84,7 +83,7 @@ int main(void)
     if (err != pdPass) hardfault_error_handler();
 
     err = xTaskCreate(task_heartbeat,
-        "heartbeat_task",
+        "task_heartbeat",
         1000,
         NULL,
         HEARTBEAT_PRIORITY,
@@ -126,5 +125,14 @@ void hardfault_error_handler()
     {
         toggle_heartbeat();
         for (unsigned long long  i = 0; i < 200000; i++);
+    }
+}
+
+void stack_overflow_error_handler()
+{
+    while(1)
+    {
+        core_GPIO_toggle_heartbeat();
+        for (unsigned long long  i = 0; i < 400000; i++);
     }
 }

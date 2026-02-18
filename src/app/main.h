@@ -1,3 +1,4 @@
 #pragma once
 
-void Error_Handler(void);
+void hardfault_error_handler();
+void stack_overflow_error_handler();

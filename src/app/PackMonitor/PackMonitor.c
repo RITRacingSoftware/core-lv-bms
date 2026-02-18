@@ -34,7 +34,8 @@ static uint16_t raw_cell_volts[NUM_CELLS];
 static uint16_t raw_chip_volts[NUM_CELLS]; // need an array for 1 val?
 static uint16_t raw_temps[NUM_TEMPS];
 
-bool PackMonitor_init() { // return bool or void?
+void PackMonitor_init() 
+{ // return bool or void?
 
     cell_volt_irr_timeout.module = null;
     cell_volt_irr_timeout.ref = FAULT_CELL_VOLT_IRR;
@@ -80,7 +81,8 @@ bool PackMonitor_init() { // return bool or void?
 
 }
 
-bool PackMonitor_Task_Update() { // return bool?
+void PackMonitor_Task_Update() 
+{ // return bool?
 
     cell_volts();
     chip_volt();
@@ -88,7 +90,9 @@ bool PackMonitor_Task_Update() { // return bool?
 
 }
 
-static void cell_volts() {
+static void cell_volts() 
+{
+
     bool rational = true;
 
     for (int i = 0; i < NUM_CELLS; i++) 
@@ -142,9 +146,7 @@ static void chip_volts()
 
 static void sum_volt_compare() 
 {
-    if ((sum_cell_volt > (chip_volt - SUM_VOLT_COMPARE_TOLERANCE)) || (sum_cell_volt < (chip_volt + SUM_VOLT_COMPARE_TOLERANCE))) {
-        core_timeout_reset(&sum_volt_compare_timeout);
-    }
+    if ((sum_cell_volt > (chip_volt - SUM_VOLT_COMPARE_TOLERANCE)) || (sum_cell_volt < (chip_volt + SUM_VOLT_COMPARE_TOLERANCE))) core_timeout_reset(&sum_volt_compare_timeout);
 }
 
 static void cell_temps() // core-bms calculates max and min terms, what for?
