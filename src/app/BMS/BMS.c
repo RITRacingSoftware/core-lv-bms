@@ -1,43 +1,46 @@
 #include "BMS.h"
+#include "core_config.h"
+#include <stm32g4xx_hal.h>
+#include <stdint.h>
+
 #include <stdbool.h>
 
 #include "gpio.h"
 #include "clock.h"
 #include "rtt.h"
+#include "can.h"
+#include "timeout.h"
+#include "boot.h" // what's this for?
+
 
 #include "AppGPIO.h"
+#include "AppCAN.h"
+#include "FaultManager.h"
 
 #include "M17.h"
 #include "ADES.h"
 
-/** Tasks:
-    - Undervoltage + overcurrent (detected in driver?)
-    - Handle startup + shutdown --> look at prev. BMS
-*/
-
-int num_readings = 0;
-
-// Function stubs
-uint16_t get_voltage(int cell);
-uint16_t get_temp(int cell);
-
-bool BMS_100Hz(void)
-{ // frequency?
-
-    // if (!bms_init()) return false;
-    
-}
-
 
 bool LVBMS_init() 
 {
-
+    core_heartbeat_init(LED1_PORT, LED1_PIN);
+    core_GPIO_set_heartbeat(true); // this is present in VC init but not BMS init. required? purpose?
+    
     if (!core_clock_init()) return false;
+    if (!CAN_init()) return false;
+    core_boot_init();
+    
     core_RTT_init();
     GPIO_init();
 
+    // init SPI?
+
     if (!M17_init()) return false;
     if (!ADES_init()) return false;
+
+    rprintf("Inits\n");
+
+    core_timeout_start_all(); // present in VC init, what for?
     
     return true;
 
@@ -45,30 +48,9 @@ bool LVBMS_init()
 
 void LVBMS_Task_Update()
 {
-    // update BMS stuff
-    // update CAN
-    // update GPIO
-    // USART?
+    PackMonitor_Task_Update();
+    CAN_Task_Update();
+    GPIO_Task_Update();
 }
 
-bool check_voltage() 
-{
-    uint16_t volt = get_voltage(num_readings)
-    
-}
-
-bool check_temp()
-{
-
-}
-
-bool check_current() 
-{
-
-}
-
-bool check_fault() 
-{
-    // ?
-}
-
+// toggle heartbeat functions
