@@ -1,16 +1,150 @@
-QUESTIONS:
-- Does last years BMS use the same chips?
-- How to control cells?
-  - Drain
-  - Other stuff?
-- Frequency of monitoring functions? 10Hz? 100Hz?
-- Which CAN buses does this communicate over?
+/** Tasks:
+    - Undervoltage + overcurrent (detected in driver?)
+    - Handle startup + shutdown --> look at prev. BMS
+*/
+
+# INFO:
+
+## FaultManager 
+- Fault vector: 
+    - Bit mask
+    - Represents errors/things to do
+    - Sent over CAN, communicates to other components for shutting down and such.
+- Fault codes:
+    - Decimal codes indicating more specific errors than the fault vectors, so that faults can be discerened in deeper layer stacks.
+    - Take up half space in fault message.
+    - Not implemented anywhere but in core-bms.
+
+## Sampling logic
+- ADES_collect_all() takes readings and stores them in STM registers, where they can be  for processing
+- How many values per sample?
+- Irrationality checking (timeout)
+- Overcurr/undervolt/overtemp checking (timeout?)
+- Calculate average current/voltage/temp
+
+## PackMonitor Logic
+
+floats:
+- cell voltage array
+- chip voltage array
+- temp array
+- max temp
+- min temp
+- avg temp
+- max cell
+- min cell
+- avg cell
+- pack volt
+- temp sum
+- cell volt sum
+
+core timeouts:
+- cell irr (separate for curr and volt?)
+- temp irr
+- out of juice
+
+uint16_t:
+- raw cell voltage array
+- raw chip voltage array
+- raw temps array
+
+init pack monitor:
+- setup timeouts
+
+pack monitor task update:
+- set pack voltage to 0 (why here?)
+- collect all
+- call parse functions (no return, bool true/false for confirmation?)
+- calculate avg cell sum
+- calculate avg temp sum
+- call CAN send data function
+- set sums to 0
+
+parse cell voltages:
+- set rational boolean to true (local)
+- iterate through cells by cell number (0 to cell number global const)
+- parse cell voltage
+- check rationality + set flag for false
+- if true:
+    - set max volt var to that cell volt
+    - also same for min cell
+    - check that it's greater than empty and reset the out of juice timeout
+
+
+parse temps:
+- set irrational if irrational
+
+
+# QUESTIONS:
+
+- [X] Chip vs. pack? e.g. parse voltage functions in core-bms packmonitor.
+    - Chip for group of cells, pack for all chips. LV BMS only has 1 chip so chip volt = pack volt
+
+- [X] Borrow BMS test board? (can't write the driver code, so point?)
+    - Two power supplies required
+    - Cycle power after flashing (keep cells connected)
+
+## Comm to cells (UART?)
+- [X] How to control cells?
+  - [X] Drain
+  - [X] Other stuff?
+- [X] Driver function vs. application? Will the driver define functions to ontrol the cells an if so, how high-level?
+
+## BMS logic
+- [X] Frequency of monitoring functions? 10Hz? 100Hz?
+    - Voltage + temps 10Hz
+
+## CAN:
+- [X] Which CAN bus does this communicate over?
+    - Secondary
+- [X] What data is transmitted over CAN? Same as old BMS code?
+    - Voltages, current, temps, fault vectors (at different rate?), charging (yes/no) -- similar to main BMS.
+- [X] Is data from the LVBMS packed the same way as the HV by the DBC?
+    - New packing functions generated from writing in DBC files (new tool used)
+
+## GPIO
+- [X] LED functions except debugging? (x2)
+    - Just for debugging
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 NOTES:
-- Keep the idea of tolerances in mind. Find in BMS/src/app/DriveMonitor.c in prev. code
-- 
+- Keep tolerances in mind. Find in BMS/src/app/DriveMonitor.c in prev. code
 
-1. Driver responsibilities (what the ADES driver should do)
+1. Driver responsibilities 
 
 The driver should do ONLY these things:
 
@@ -286,20 +420,4 @@ void BMS_startup_sequence(void)
         FaultManager_set_err(ERR_STARTUP_VOLTAGE);
 }
 ```
-
----
-
-**So — how SHOULD your application access this data?**
-
-  Call `ADES_collect_all()` at a regular interval
-
-  Use `ADES_get_voltage(cell)` to retrieve a voltage
-
-  Use `ADES_get_temp(therm)` to retrieve a temperature
-
-Never touch low-level arrays directly
-
-  Convert / validate values in your own application layer
-
-  Feed them into your fault logic, CAN logic, and charging logic
 

@@ -1,11 +1,11 @@
-environment:
-- gitignore
-- README
-  - Project intro
-  - Needed software: docker, git
-  - Recommended software: VS Code
-  - Native compile: arm cross-compiler, cmake, python3?, meson?
-- vs code configs
+main
 
-code:
-- unit tests - googletest+googlemock?
+BMS
+
+PackMonitor
+
+FaultManager
+
+CAN
+
+GPIO
