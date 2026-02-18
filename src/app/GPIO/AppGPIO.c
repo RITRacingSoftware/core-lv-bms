@@ -15,3 +15,8 @@ bool GPIO_init()
     core_GPIO_digital_write(LED2_PORT, LED2_PIN, false);
 
 }
+
+void GPIO_Task_Update()
+{
+    
+}
