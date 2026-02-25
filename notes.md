@@ -5,6 +5,14 @@
 
 # INFO:
 
+## Charging State Machine
+- Detect charging? at startup with pin
+Charging state:
+    - Balancing parameters
+- Output state:
+Always monitor everything no matter the state
+
+
 ## FaultManager 
 - Fault vector: 
     - Bit mask

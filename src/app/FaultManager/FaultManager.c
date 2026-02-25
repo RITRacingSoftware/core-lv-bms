@@ -1,15 +1,17 @@
 #include "FaultManager.h"
 #include <stdint.h>
+#include "rtt.h"
 
-static uint64_t faultList = 0;
-static uint64_t ignoreList = 0;
+static uint64_t faultList;
+static uint64_t ignoreList;
 
 void FaultManager_init() 
 {
     faultList = 0;
+    ignoreList = 0;
 }
 
-void FaultManager_set(uint64_t faultCode)
+void FaultManager_set_fault(uint64_t faultCode)
 {
     if (!(faultList & faultCode)) // fault code not already in fault list
     {
@@ -41,3 +43,5 @@ void FaultManager_reset(uint16_t faultCode)
 {
     faultList &= ~faultCode;
 }
+
+void FaultManager_LSSM(uint8_t lssmByte) {}

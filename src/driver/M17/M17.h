@@ -2,6 +2,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define M17_SPI SPI3
+#define M17_CS_PORT GPIOA
+#define M17_CS_PIN GPIO_PIN_15
 
 #define CRC_POLY                        (0xB2)
 #define M17_HELLO_ALL                   (0x57)
@@ -16,6 +19,7 @@
 #define M17_STATUS_RX                   (0x01)
 #define RX_ERR                          (0x01 << 7)
 #define RX_BUSY                         (0x01 << 5)
+#define RX_OVRFLW_ERR                   (0x01 << 3)
 #define RX_STOP                         (0x01 << 1)
 #define RX_EMPTY                        (0x01)
 
@@ -71,4 +75,5 @@
 bool M17_init();
 bool M17_write_ADES_reg(uint8_t dest, uint8_t reg_addr, uint16_t msg);
 bool M17_read_ADES_reg(uint8_t dest, uint8_t reg_addr, uint16_t *rxBuf, uint8_t rxLen);
+bool M17_read_ADES_block(uint8_t dest, uint8_t reg_addr, uint16_t *rxBuf, uint8_t rxLen);
 uint8_t M17_num_active_chips();

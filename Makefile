@@ -21,6 +21,7 @@ STM32_ASM_FLAGS := $(STM32_CC_FLAGS)
 STM32_LD_SCRIPT := STM32G473RETx_FLASH.ld
 STM32_LD_FLAGS := $(STM32_COMMON_FLAGS) -static -Wl,--gc-sections -T $(STM32_LD_SCRIPT) -specs=nano.specs -specs=nosys.specs
 
+
 # Sources
 APP_DIR := src/app
 APP_SRCS := $(shell find $(APP_DIR) -type f -name "*.c")
@@ -88,7 +89,7 @@ $(OUTNAME).bin: $(OUTNAME).elf
 
 $(OUTNAME).elf: $(STM32_APP_OBJS) $(STM32_DRIVER_OBJS) $(STM32CUBE_OBJS) $(FREERTOS_OBJS) $(CORE_OBJS) $(RTT_OBJS) $(DBC_OBJS)
 	@[ -d $(@D) ] || mkdir -p $(@D)
-	$(STM32_LD) $(STM32_LD_FLAGS) $^ -o $@
+	$(STM32_LD) $(STM32_LD_FLAGS) $^ -o $@ -lc -lm
 
 $(OUTNAME).ihex: $(OUTNAME).elf
 	@[ -d $(@D) ] || mkdir -p $(@D)

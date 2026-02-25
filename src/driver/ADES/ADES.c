@@ -1,119 +1,137 @@
 #include "ADES.h"
+
+// Standard includes
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "stm32g4xx_hal.h"
+// Core includes
 #include "gpio.h"
-#include "AppGPIO.h"
-
-#include "config.h"
-#include "FaultManager.h"
 #include "rtt.h"
+
+// Common includes
+#include "config.h"
+#include "common_macros.h"
+
+// App includes
+#include "AppGPIO.h"
+#include "FaultManager.h"
+#include "BMS.h"
+
+// Driver includes
 #include "M17.h"
-
-static bool ADES_collect_voltages();
-static bool ADES_collect_temps();
-
-const uint8_t num_cells_per_chip[NUM_CHIPS] = NUM_CELLS_PER_CHIP;
-
-uint16_t voltages[NUM_CELLS];
-uint16_t temps[NUM_THERMS];
 
 bool ADES_init()
 {
     rprintf("Begin ADES init\n");
     rprintf("num_active_chips: %d\n", M17_num_active_chips());
     
-    if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_DEVCFG1, ALIVECNT)) return false;
-
-
+    if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_DEVCFG1, ALIVECNT | ALERTEN | UARTCFG_DIFF)) return false;
+    rprintf("Init config\n");
+    // if (!M17_write_ADES_reg(ADES_WRITEDEV(1), 0x6, 1 << 15)) return false;
+    
     // Enable the block voltage measurement and every chip that's activated
     for (int chip = 0; chip < M17_num_active_chips(); chip++) {
-        if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_MEASUREEN1, ((1 << num_cells_per_chip[chip]) - 1 ) | BLOCKEN)) return false;
+        if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_MEASUREEN1, (MASK(num_cells_per_chip[chip]) | BLOCKEN))) return false;
     }
+    rprintf("Init block voltages\n");
 
-    // Enable thermistor measurements
-    if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_MEASUREEN2, 0x003F)) return false;
-    if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_AUXGPIOCFG, 0x00)) return false;
+    // Enable the thermistor measurements on every chip that's activated
+    for (int chip = 0; chip < M17_num_active_chips(); chip++) {
+        if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_MEASUREEN2, MASK(num_therms_per_chip[chip]))) return false;
+    }
+    rprintf("Init therm voltages\n");
+
+    // Set all AUX/GPIO pins to analog in
+    if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_AUXGPIOCFG, 0x0000)) return false;
+    rprintf("Init aux inputs\n");
     
-
-    uint16_t rxBuf[2];
+/*    
+    // BALSWEN
+    if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_BALSWCTRL, (1 << 2))) return false;
+    // CBDUTY
+    if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_BALCTRL, (MASK(4) << 4))) return false;
+    // if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_BALCTRL, (0b011 << 11) | (MASK(4) << 4))) return false;
+    // CBEXP1
+    if (!M17_write_ADES_reg(ADES_WRITEDEV(0), ADES_BALEXP(0), 0x3FF)) return false;
+    // CBMODE
+    // core_GPIO_digital_write(LED3_PORT, LED3_PIN, true);
+    if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_BALCTRL, (0b011 << 11) | (MASK(4) << 4))) return false;
+    */
+    
     rprintf("Finished ADES init\n");
 
     return true;
 }
 
-bool ADES_collect_all()
+bool ADES_collect_all(uint16_t *raw_cell_voltages, uint16_t *raw_chip_voltages, uint16_t *raw_temps)
 {
-    bool ready = false;
+    bool scanning = true;
     uint8_t curr_cell = 0;
-    uint16_t rxBuf;
+    uint16_t scanBuf[M17_num_active_chips()];
+    // Allocate array memory for the biggest possible, which would be all chips for block voltages
+    uint16_t rxBuf[NUM_CHIPS] = {0};
     uint32_t t = HAL_GetTick();
 
     if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_SCANCTRL, SCAN)) return false;
 
-    while (!ready)
+    // Request a scan of the ADCs, for both voltages and temps.
+    // Wait until every chip is done scanning and ready to read data
+    while (!scanning)
     {
+        // Make sure it isn't taking too long to scan
         if (HAL_GetTick() - t >= ADES_SCAN_TIMEOUT_MS) {
             FaultManager_set_err(ERR_ADES_SCAN_TIMEOUT);
             return false;
         }
-        if (!M17_read_ADES_reg(ADES_READALL, ADES_SCANCTRL, &rxBuf, 1)) return false;
-        ready = rxBuf & DATARDY;
+        if (!M17_read_ADES_reg(ADES_READALL, ADES_SCANCTRL, scanBuf, M17_num_active_chips())) return false;
+        for (int chip = 0; chip < M17_num_active_chips(); chip++) {
+            if (!(scanBuf[chip] & DATARDY)) scanning = false;
+        }
     }
 
-    rprintf("Scan complete\n");
+    uint8_t voltages_read = 0;
+    uint8_t temps_read = 0;
+    uint8_t rxLen = 0;
+    for (int chip = 0; chip < M17_num_active_chips(); chip++)
+    {
+        rxLen = num_cells_per_chip[chip];
+        if (!M17_read_ADES_block(chip, ADES_CELLREG(0), raw_cell_voltages + voltages_read, rxLen)) return false;
+        voltages_read += rxLen;  // Increment pointer to how many cells have been read
+        
+        rxLen = num_therms_per_chip[chip];
+        if (!M17_read_ADES_block(chip, ADES_AUXREG(0), raw_temps + temps_read, rxLen)) return false;
+        temps_read += rxLen;    // Increment pointer to how many temps have been read
+    }
+
+    uint16_t reversed_raw_chips[M17_num_active_chips()];
+    if (!M17_read_ADES_reg(ADES_READALL, ADES_BLOCKREG, reversed_raw_chips, M17_num_active_chips())) return false;
+    for (int i = 0; i < M17_num_active_chips(); i++) {
+        raw_chip_voltages[i] = reversed_raw_chips[M17_num_active_chips() - 1 - i];
+    }
 
     /*
-    if (!M17_read_ADES_reg(ADES_READDEV(0), ADES_CELLREG(0), &rxBuf, 1)) return false;
-    voltages[curr_cell] = (5000L * rxBuf >> 16);
-    if (!M17_read_ADES_reg(ADES_READDEV(0), ADES_AUXREG(0), temps, 1)) return false;
-    */
-
-
-    // Collect all voltages and temps
-    for (int chip = 0; chip < M17_num_active_chips(); chip++) {
-        for (int cell = 0; cell < num_cells_per_chip[cell]; cell++) {
-            if (!M17_read_ADES_reg(ADES_READDEV(chip), ADES_CELLREG(cell), &rxBuf, 1)) return false;
-            voltages[curr_cell] = ((5000 * rxBuf) >> 16);
-            curr_cell++;
-        }
-        for (int therm = 0; therm < NUM_THERMS_PER_CHIP; therm++) {
-            if (!M17_read_ADES_reg(ADES_READDEV(chip), ADES_AUXREG(therm), &rxBuf, 1)) return false;
-            temps[(chip * NUM_THERMS_PER_CHIP) + therm] = ((1800 * rxBuf) >> 16);
-        }
+    for (int i = 0; i < NUM_CELLS; i++) {
+        rprintf("Cell %d: %d\n", i, cell_voltages[i]);
     }
 
-    // ADES_collect_voltages();
-    for (int i = 0; i < NUM_CELLS; i++) {
-        rprintf("Cell %d: %d\n", i, voltages[i]);
+    for (int i = 0; i < NUM_CHIPS; i++) {
+        rprintf("Chip %d: %d\n", i, chip_voltages[i]);
     }
 
     for (int i = 0; i < NUM_THERMS; i++) {
         rprintf("Temp: %d: %d\n", i, temps[i]);
     }
+    */
 }
 
-static bool ADES_collect_voltages()
+bool ADES_force_balance(uint8_t chip, uint8_t cell)
 {
-    if (!M17_read_ADES_reg(ADES_READALL, ADES_CELLREG(0), voltages, 1)) return false;
-    if (!M17_read_ADES_reg(ADES_READALL, ADES_CELLREG(1), voltages + 1, 1)) return false;
-    if (!M17_read_ADES_reg(ADES_READALL, ADES_CELLREG(2), voltages + 2, 1)) return false;
-    if (!M17_read_ADES_reg(ADES_READALL, ADES_CELLREG(3), voltages + 3, 1)) return false;
-    for (int i = 0; i < NUM_CELLS; i++)
-    {
-        rprintf("Cell %d: %d\n", i, (5000L*voltages[i])>>16 );
-    }
-    return true;
-}
-
-static bool ADES_collect_temps()
-{
-    if (!M17_read_ADES_reg(ADES_READALL, ADES_AUXREG(0), temps, 1)) return false;
-    if (!M17_read_ADES_reg(ADES_READALL, ADES_AUXREG(1), temps + 1, 1)) return false;
-    if (!M17_read_ADES_reg(ADES_READALL, ADES_AUXREG(2), temps + 2, 1)) return false;
-    for (int i = 0; i < 3; i++)
-    {
-        rprintf("Temp: %d: %d\n", i, (temps[i]));
-    }
+    // BALSWEN
+    if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_BALSWCTRL, (1 << cell))) return false;
+    // CBDUTY
+    if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_BALCTRL, (MASK(4) << 4))) return false;
+    // CBEXP1
+    if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_BALEXP(0), 0x3FF)) return false;
+    // CBMODE
+    if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_BALCTRL, (0b010 << 11) | (MASK(4) << 4))) return false;
 }
