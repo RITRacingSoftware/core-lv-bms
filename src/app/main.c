@@ -1,45 +1,38 @@
-#include "main.h"
-
-#include <stm32g4xx_hal.h>
-
 #include <stdbool.h>
 #include <stdio.h>
-
-#include "BMS.h"
-
-// split includes to respective files?
-#include "can.h"
-#include "clock.h"
-#include "gpio.h"
-#include "error_handler.h" //?
-#include "boot.h"
-#include "core_config.h"
 
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
 
+#include <stm32g4xx_hal.h>
+
+#include "can.h"
+#include "clock.h"
+#include "gpio.h"
+#include "error_handler.h"
+#include "boot.h"
+#include "core_config.h"
+
+#include "main.h"
+#include "AppCAN.h"
+#include "BMS.h"
+
 
 #define LVBMS_100HZ_PRIORITY (tskIDLE_PRIORITY + 1)
-#define CAN_RX_PRIORITY (tskIDLE_PRIORITY + 2)
 #define CAN_TX_PRIORITY (tskIDLE_PRIORITY + 2)
 #define HEARTBEAT_PRIORITY (tskIDLE_PRIORITY + 4)
 
-void task_CAN_tx(void)
+void task_CAN_tx(void *pvParameters)
 {
     (void) pvParameters;
     CAN_tx();
     if (!CAN_tx()) hardfault_error_handler();
 }
 
-void task_CAN_rx(void *pvParameters)
-{
-    while(true) {CAN_rx();}
-}
-
 void task_100Hz(void *pvParameters)
 {
-    void (*pvParameters);
+    (void) pvParameters;
     TickType_t next_wake_time = xTaskGetTickCount();
     while(true)
     {
@@ -71,16 +64,7 @@ int main(void)
         CAN_TX_PRIORITY, // uxPriority
         NULL); // pass handle
 
-    if (err != pdPass) hardfault_error_handler();
-
-    err = xTaskCreate(task_CAN-rx,
-        "CAN_rx",
-        1000,
-        NULL,
-        CAN_RX_PRIORITY,
-        NULL);
-    
-    if (err != pdPass) hardfault_error_handler();
+    if (err != pdPASS) hardfault_error_handler();
 
     err = xTaskCreate(task_heartbeat,
         "task_heartbeat",
@@ -89,7 +73,7 @@ int main(void)
         HEARTBEAT_PRIORITY,
         NULL);
     
-    if (err != pdPass) hardfault_error_handler();
+    if (err != pdPASS) hardfault_error_handler();
 
     err = xTaskCreate(task_100Hz,
         "100hz_task",
@@ -98,7 +82,7 @@ int main(void)
         LVBMS_100HZ_PRIORITY,
         NULL);
     
-    if (err != pdPass) hardfault_error_handler();
+    if (err != pdPASS) hardfault_error_handler();
 
     NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
 
@@ -123,7 +107,7 @@ void hardfault_error_handler()
 {
     while(1)
     {
-        toggle_heartbeat();
+        core_GPIO_toggle_heartbeat();
         for (unsigned long long  i = 0; i < 200000; i++);
     }
 }

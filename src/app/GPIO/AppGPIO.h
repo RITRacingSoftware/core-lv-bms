@@ -12,3 +12,4 @@
 #define LED2_PIN GPIO_PIN_2
 
 bool GPIO_init();
+void GPIO_Task_Update();

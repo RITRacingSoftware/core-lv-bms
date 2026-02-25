@@ -19,7 +19,6 @@
 
 static uint8_t num_active_chips;
 
-
 static bool transmit_ADES_message_raw(uint8_t *msg, uint8_t len);
 static bool wake_daisy_chain();
 static bool command_hello_all();

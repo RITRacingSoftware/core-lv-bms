@@ -1,25 +1,25 @@
 #include "BMS.h"
 #include "core_config.h"
 #include <stm32g4xx_hal.h>
-#include <stdint.h>
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "gpio.h"
 #include "clock.h"
 #include "rtt.h"
 #include "can.h"
 #include "timeout.h"
-#include "boot.h" // what's this for?
+#include "boot.h"
 
 
 #include "AppGPIO.h"
 #include "AppCAN.h"
 #include "FaultManager.h"
+#include "PackMonitor.h"
 
 #include "M17.h"
 #include "ADES.h"
-
 
 bool LVBMS_init() 
 {
