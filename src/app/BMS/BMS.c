@@ -21,6 +21,9 @@
 #include "M17.h"
 #include "ADES.h"
 
+const uint8_t num_cells_per_chip[NUM_CHIPS] = NUM_CELLS_PER_CHIP;
+const uint8_t num_therms_per_chip[NUM_THERMS] = NUM_THERMS_PER_CHIP;
+
 bool LVBMS_init() 
 {
     core_heartbeat_init(LED1_PORT, LED1_PIN);

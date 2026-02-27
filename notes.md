@@ -32,6 +32,10 @@ Always monitor everything no matter the state
 
 # QUESTIONS:
 
+- [ ] Copied over the config file because driver code uses it as well.  Changing constant names to those in my code, descriptive but don't align with core-bms style. Should I be changing mine to those in the config file for consistency?
+
+- [ ] Asked to compare sum of cell volts w/ chip volt. Tolerance for difference? Enter in config file
+
 - [ ] How to communicate with charger for charging and discharging?
 
 - [X] Chip vs. pack? e.g. parse voltage functions in core-bms packmonitor.
@@ -45,7 +49,7 @@ Always monitor everything no matter the state
 - [X] How to control cells?
   - [X] Drain
   - [X] Other stuff?
-- [X] Driver function vs. application? Will the driver define functions to ontrol the cells an if so, how high-level?
+- [X] Driver function vs. application? Will the driver define functions to control the cells an if so, how high-level?
 
 ## BMS logic
 - [X] Frequency of monitoring functions? 10Hz? 100Hz?
