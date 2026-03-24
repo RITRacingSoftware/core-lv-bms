@@ -9,3 +9,6 @@ extern const uint8_t num_therms_per_chip[NUM_THERMS];
 
 bool LVBMS_init();
 void LVBMS_Task_Update();
+
+void LVBMS_1Hz();
+void LVBMS_100Hz();

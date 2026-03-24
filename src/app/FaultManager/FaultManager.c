@@ -13,18 +13,13 @@ void FaultManager_init()
 
 void FaultManager_set_fault(uint64_t faultCode)
 {
-    if (!(faultList & faultCode)) // fault code not already in fault list
+    if (!(faultList & faultCode))           // fault code not already in fault list
     {
-        if (!(faultCode & ignoreList))
+        faultList |= faultCode;             // add fault code to fault list
+        if (!(faultList & ignoreList))      // if faults are not all in ignore list (?)
         {
-            faultList |= FAULT_PDU_SHUTDOWN; // Taken from BMS FaultManager. Does LVBMS also shut down the PDU? 
-            // function to set fault here
-            faultList |= faultCode;
-            // add fault vector to CAN message (params: bus, fault vector frame ID, bits?, faultList)
-        }
-        else 
-        {
-            faultList |= faultCode;
+            faultList |= FAULT_SHUTDOWN;    // shut down
+            // send CAN message here
         }
     }
 }

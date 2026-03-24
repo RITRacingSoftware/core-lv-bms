@@ -8,10 +8,13 @@
 #define FAULT_ADES                  0x00000004
 #define FAULT_VOLTAGE_DIFF          0x00000008
 #define FAULT_CHIP_VOLT_IRR         0x00000010
-#define FAULT_SUM_VOLT_COMPARISON   0x00000020
-#define FAULT_OUT_OF_JUICE          0x00000040
-#define FAULT_TEMP_IRR              0x00000080
-#define FAULT_PDU_SHUTDOWN          0x00000100
+#define FAULT_OUT_OF_JUICE          0x00000020
+#define FAULT_TEMP_IRR              0x00000040
+// have overtemp?
+#define FAULT_SHUTDOWN              0x00000080
+#define FAULT_OVERCURRENT           0x00000100
+#define FAULT_CURRENT_IRR           0x00000200
+//drain failure?
 
 // From core-bms
 #define ERR_TX_NOT_RECEIVED                    1

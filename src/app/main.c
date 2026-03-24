@@ -4,6 +4,7 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
+#include "rtt.h"
 
 #include <stm32g4xx_hal.h>
 
@@ -17,8 +18,10 @@
 #include "main.h"
 #include "AppCAN.h"
 #include "BMS.h"
+#include "PackMonitor.h"
 
 
+#define LVBMS_1HZ_PRIORITY (tskIDLE_PRIORITY + 1)
 #define LVBMS_100HZ_PRIORITY (tskIDLE_PRIORITY + 1)
 #define CAN_TX_PRIORITY (tskIDLE_PRIORITY + 2)
 #define HEARTBEAT_PRIORITY (tskIDLE_PRIORITY + 4)
@@ -26,7 +29,7 @@
 void task_CAN_tx(void *pvParameters)
 {
     (void) pvParameters;
-    CAN_tx();
+    CAN_Task_Update();
     if (!CAN_tx()) hardfault_error_handler();
 }
 
@@ -36,57 +39,88 @@ void task_100Hz(void *pvParameters)
     TickType_t next_wake_time = xTaskGetTickCount();
     while(true)
     {
-        LVBMS_Task_Update();
+        LVBMS_100Hz();
         vTaskDelayUntil(&next_wake_time, 10);
     }
 }
 
-void task_heartbeat(void *pvParameters) // heartbeat task defined where?
+void task_1Hz(void *pvParameters)
+{
+    (void) pvParameters;
+    TickType_t next_wake_time = xTaskGetTickCount();
+    while(true)
+    {
+        LVBMS_1Hz();
+        vTaskDelayUntil(&next_wake_time, 10);
+    }
+}
+
+void task_heartbeat(void *pvParameters)
 {
     (void) pvParameters;
     while(true) {
         core_GPIO_toggle_heartbeat();
-        vTaskDelay(100 * portTICK_PERIOD_MS);
+        vTaskDelay(1000 * portTICK_PERIOD_MS);
+        rprintf("Heartbeat\n");
     }
 }
 
 int main(void) 
 {
-    // init here or in 100z task in BMS?
-    if (!LVBMS_init()) hardfault_error_handler(); 
-
+    if (!LVBMS_init()) {
+        hardfault_error_handler();
+    }
+    
     int err;
-
+    
     err = xTaskCreate(task_CAN_tx, // task code
         "CAN_tx", // pcName
         1000, // uxStackDepth
         NULL, // pvParameters
         CAN_TX_PRIORITY, // uxPriority
         NULL); // pass handle
-
-    if (err != pdPASS) hardfault_error_handler();
-
+        
+        if (err != pdPASS) {
+            hardfault_error_handler();
+        }
+        
     err = xTaskCreate(task_heartbeat,
         "task_heartbeat",
         1000,
         NULL,
         HEARTBEAT_PRIORITY,
         NULL);
-    
-    if (err != pdPASS) hardfault_error_handler();
-
+        
+    if (err != pdPASS) {
+        hardfault_error_handler();
+    }
+        
     err = xTaskCreate(task_100Hz,
         "100hz_task",
         1000,
         NULL,
         LVBMS_100HZ_PRIORITY,
         NULL);
+        
+    if (err != pdPASS) {
+        hardfault_error_handler();
+    }
+
+    err = xTaskCreate(task_1Hz,
+        "1hz_task",
+        1000,
+        NULL,
+        LVBMS_1HZ_PRIORITY,
+        NULL);
     
-    if (err != pdPASS) hardfault_error_handler();
+    if (err != pdPASS){
+        hardfault_error_handler();
+    }
 
     NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
 
     vTaskStartScheduler();
+
 
     hardfault_error_handler();
 

@@ -6,6 +6,9 @@
 #define M17_CS_PORT GPIOA
 #define M17_CS_PIN GPIO_PIN_15
 
+#define M17_SWPOR_TIME_MS 100
+#define M17_ADES_RESTART_TIME_MS 250
+
 #define CRC_POLY                        (0xB2)
 #define M17_HELLO_ALL                   (0x57)
 #define M17_NORMAL_LSSM                 (0x84)

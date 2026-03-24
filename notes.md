@@ -1,17 +1,30 @@
-/** Tasks:
-    - Undervoltage + overcurrent (detected in driver?)
-    - Handle startup + shutdown --> look at prev. BMS
-*/
+# DO BEFORE TESTING:
+
+- Fix cell layout stuff in config file
+
 
 # INFO:
 
-## Charging State Machine
-- Detect charging? at startup with pin
-Charging state:
-    - Balancing parameters
-- Output state:
-Always monitor everything no matter the state
+## DBC
 
+Syntax:
+
+<Message Format> <CAN ID> <Message name> : <Data langth> <Transmitter name (optional)>
+
+<Signal syntax> <Signal name> : <Bit start position> | <Number of bits> <Big (0) vs Little (1) endian> <signed (-) vs unsigned (+)> (<scale>, <offset>)[<min val> | <max val>] <unit> <reciever name>
+
+
+## Charging State Machine
+- Detect charger connected at startup with CHG_IN pin
+- States:
+    - Charger disconnected
+    - Charging state
+    - Balancing
+    - Complete
+    - Faulted
+
+    - ? Output state:
+Always monitor everything no matter the state
 
 ## FaultManager 
 - Fault vector: 
@@ -24,7 +37,7 @@ Always monitor everything no matter the state
     - Not implemented anywhere but in core-bms.
 
 ## Sampling logic
-- ADES_collect_all() takes readings and stores them in STM registers, where they can be  for processing
+- ADES_collect_all() takes readings and stores them in STM registers, where they can be used for processing
 - How many values per sample?
 - Irrationality checking (timeout)
 - Overcurr/undervolt/overtemp checking (timeout?)
@@ -32,11 +45,47 @@ Always monitor everything no matter the state
 
 # QUESTIONS:
 
-- [ ] Copied over the config file because driver code uses it as well.  Changing constant names to those in my code, descriptive but don't align with core-bms style. Should I be changing mine to those in the config file for consistency?
+- [ ] Where should startup code be? main?
 
-- [ ] Asked to compare sum of cell volts w/ chip volt. Tolerance for difference? Enter in config file
+- [ ] When should shutdown fault vector be sent out. Where in code should shutdown occur?
 
-- [ ] How to communicate with charger for charging and discharging?
+
+# ANSWERED
+
+- [X] Calculating SoC?
+    - Can't because hardware is missing so don't need to.
+
+- [X] Frequencies of different functions?
+    - CurrentMonitor and PackMonitor different. Actual frequencies don't really matter for now.
+
+- [X] What does handling startup look like?
+    - Soft and hard start of STM. Pull up pin connected to FET to hard start.
+
+- [X] PB15 alert signal for what? PC8 ADES_ALERT for what? > schematic
+    - Don't need.
+
+- [X] HVBMS code reads AIR1 and J1772 (?), what for? Does LVBMS need (! not in schematic, means shutdown faults have to be diff)? > AppGPIO.c
+    - Don't need.
+    - AIR1 is just passed through because BMS is nearest board.
+    - J1772 is charger for HV.
+
+- [X] What is current limiting? > CurrentLimiter.c in old BMS code
+    - Part of limp mode. Not needed.
+
+- [X] What is limp mode? > LimpMode.c in old BMS code
+    - Not needed. Limits power when low battery.
+
+- [X] Is checking/timeout/fault for overcurrent separate from irrational high? > CurrentMonitor.c
+    - Different.
+
+- [X] Copied over the config file because driver code uses it as well.  Changing constant names to those in my code, descriptive but don't align with core-bms style. Should I be changing mine to those in the config file for consistency? > config.h
+    - Doesn't matter.
+
+- [X] Asked to compare sum of cell volts w/ chip volt. Tolerance for difference? Enter in config file > config.h, PackMonitor.c
+    - Not really necessary.
+
+- [X] How to communicate with charger for charging and discharging? > no file yet
+    - Pin on STM tell you whether charging or not
 
 - [X] Chip vs. pack? e.g. parse voltage functions in core-bms packmonitor.
     - Chip for group of cells, pack for all chips. LV BMS only has 1 chip so chip volt = pack volt
@@ -66,6 +115,3 @@ Always monitor everything no matter the state
 ## GPIO
 - [X] LED functions except debugging? (x2)
     - Just for debugging
-
-NOTES:
-- Keep tolerances in mind. Find in BMS/src/app/DriveMonitor.c in prev. code

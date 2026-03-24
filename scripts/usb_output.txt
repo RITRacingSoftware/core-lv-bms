@@ -1,0 +1,12 @@
+Connected:
+BUSID  VID:PID    DEVICE                                                        STATE
+2-3    27c6:6594  Goodix MOC Fingerprint                                        Not shared
+2-4    30c9:00cd  Integrated Camera, Integrated IR Camera, Camera DFU Device    Not shared
+2-6    046d:c548  Logitech USB Input Device, USB Input Device                   Not shared
+2-7    1366:1020  J-Link                                                        Not shared
+2-10   8087:0033  Intel(R) Wireless Bluetooth(R)                                Not shared
+
+Persisted:
+GUID                                  DEVICE
+4e28628e-0aa7-4bb6-a2e8-5635b5eebb0c  J-Link
+

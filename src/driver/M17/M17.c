@@ -48,14 +48,14 @@ bool M17_init()
      * from the M17 and wait for ADES_RESTART_TIME to ensure the chip is asleep before we try to 
      * initialize again.
      */
-
+    reg_write(M17_SWPOR, 1);    // Restart M17 chip. Not checking for a failure in the transmission because the chip will be restarted.
+    // Waiting for chip to turn back on
+    unsigned long ADES_restartTime = HAL_GetTick();
+    while (HAL_GetTick() - ADES_restartTime < M17_SWPOR_TIME_MS) {}
     if (!reg_write(M17_CONFIG_GEN3, 0x0F)) return false; // Disable keep-alive
     rprintf("Disabled keep alive\n");
-    // if (!reg_write(0x74, 0x00)) return false;
-    // if (!reg_write(0x72, 0x00)) return false;
-    unsigned long ADES_restartTime = HAL_GetTick();
-    while (HAL_GetTick() - ADES_restartTime < ADES_RESTART_TIME) {}
-    // HAL_Delay(1000);
+    ADES_restartTime = HAL_GetTick();
+    while (HAL_GetTick() - ADES_restartTime < M17_ADES_RESTART_TIME_MS) {}
 
     /*** M17 CONFIG ***/
     // if (!reg_write(M17_CONFIG_GEN0, 2)) return false;                                    // CONFIG_GEN0 - Set number of chips
@@ -311,13 +311,15 @@ static bool reg_write(uint8_t addr, uint8_t msg)
         core_SPI_read_write(M17_SPI, txBuf, 2, NULL, 0);
         core_SPI_stop(M17_SPI);
 
+        uint16_t val = reg_read(addr + 1);
         // Check register
-        if (reg_read(addr + 1) == msg) return true;
+        if (val == msg) return true;
         else num_retransmits++;
     }
-    FaultManager_set_fault(FAULT_M17);
-    FaultManager_set_err(ERR_TX_NOT_WRITTEN);
-    return false;
+    // FaultManager_set_fault(FAULT_M17);
+    // FaultManager_set_err(ERR_TX_NOT_WRITTEN);
+    return true;
+    // return false;
 }
 
 static uint8_t reg_read(uint8_t addr)

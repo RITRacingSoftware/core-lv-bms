@@ -17,6 +17,8 @@
 #include "AppCAN.h"
 #include "FaultManager.h"
 #include "PackMonitor.h"
+#include "CurrentMonitor.h"
+#include "ChargeMonitor.h"
 
 #include "M17.h"
 #include "ADES.h"
@@ -24,36 +26,41 @@
 const uint8_t num_cells_per_chip[NUM_CHIPS] = NUM_CELLS_PER_CHIP;
 const uint8_t num_therms_per_chip[NUM_THERMS] = NUM_THERMS_PER_CHIP;
 
-bool LVBMS_init() 
+bool LVBMS_init()
 {
-    core_heartbeat_init(LED1_PORT, LED1_PIN);
-    core_GPIO_set_heartbeat(true); // this is present in VC init but not BMS init. required? purpose?
+    core_heartbeat_init(HEARTBEAT_PORT, HEARTBEAT_PIN);
+    core_GPIO_set_heartbeat(true);
     
-    if (!core_clock_init()) return false;
-    if (!CAN_init()) return false;
-    core_boot_init();
+    if (!core_clock_init()){
+        return false;
+    }    
+    
+    // core_boot_init();
     
     core_RTT_init();
+
     GPIO_init();
 
-    // init SPI?
-
     if (!M17_init()) return false;
+
+
     if (!ADES_init()) return false;
 
-    rprintf("Inits\n");
-
-    core_timeout_start_all(); // present in VC init, what for?
+    core_timeout_start_all();
     
     return true;
 
+
 }
 
-void LVBMS_Task_Update()
+void LVBMS_1Hz()
+{
+    CurrentMonitor_Task_Update();
+}
+
+void LVBMS_100Hz()
 {
     PackMonitor_Task_Update();
-    CAN_Task_Update();
+    // ChargeMonitor_Task_Update();
     GPIO_Task_Update();
 }
-
-// toggle heartbeat functions

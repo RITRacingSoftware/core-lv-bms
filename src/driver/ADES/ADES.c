@@ -20,6 +20,8 @@
 // Driver includes
 #include "M17.h"
 
+static void poop_loop();
+
 bool ADES_init()
 {
     rprintf("Begin ADES init\n");
@@ -44,6 +46,14 @@ bool ADES_init()
     // Set all AUX/GPIO pins to analog in
     if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_AUXGPIOCFG, 0x0000)) return false;
     rprintf("Init aux inputs\n");
+
+    if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_AUXTIMEREG, 500)) return false;
+    rprintf("Init aux settling time\n");
+
+
+    poop_loop();
+
+    //
     
 /*    
     // BALSWEN
@@ -124,14 +134,50 @@ bool ADES_collect_all(uint16_t *raw_cell_voltages, uint16_t *raw_chip_voltages, 
     */
 }
 
-bool ADES_force_balance(uint8_t chip, uint8_t cell)
+bool ADES_force_balance(uint8_t chip, uint8_t cell, bool reset)
 {
-    // BALSWEN
-    if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_BALSWCTRL, (1 << cell))) return false;
+    if (reset) {
+        if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_BALSWCTRL, (0))) return false;
+    }
+    else {
+        // BALSWEN
+        if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_BALSWCTRL, (1 << cell))) return false;
+    }
     // CBDUTY
     if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_BALCTRL, (MASK(4) << 4))) return false;
     // CBEXP1
     if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_BALEXP(0), 0x3FF)) return false;
     // CBMODE
     if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_BALCTRL, (0b010 << 11) | (MASK(4) << 4))) return false;
+}
+
+bool ADES_init_balancing()
+{
+    // for (int chip = 0; chip < M17_num_active_chips(); chip++) {
+        // if !(M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_BALSWCTRL, )) return false;
+    // }
+
+    // Set to balance until cells hit (BAL_UV_THRESHOLD_V), as defined in config.h.
+    // Pack the float into a 14bit ADC value, with a reference voltage of 5V
+    uint16_t packed_balance_v = (BAL_UV_THRESHOLD_V * ADES_ADC_RANGE)/ADES_CELL_ADC_RANGE_V;
+
+    // Left shift by 2 because the value occupies bits [15:2] of 16bit ADES register
+    if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_BALAUTOUVTHR, (packed_balance_v << 2))) return false;
+
+    // Set balancing duty cycle (CBDUTY) and enable cell-balancing measurements (CBMEASEN)
+    if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_BALCTRL, (BAL_DUTY_CYCLE_COEFF << 4) | 0b10 )) return false;
+
+    // When balancing, every nth sample will be replaced with an ADC calibration to keep measurement accurate while pack heats up.
+    if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_BALDLYCTRL, BAL_CAL_PERIOD)) return false;
+}
+
+void poop_loop()
+{
+    for (int chip = 0; chip < NUM_CHIPS; chip++) {
+        for (int cell = 0; cell < num_cells_per_chip[chip]; cell++) {
+            ADES_force_balance(chip, cell, false);
+            HAL_Delay(POOP_LOOP_DELAY_MS);
+            ADES_force_balance(chip, 0, true);
+        }
+    }
 }

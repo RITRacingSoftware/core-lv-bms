@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define POOP_LOOP_DELAY_MS 10
+
 #define ADES_WRITEDEV(n) ((n << 3) | 0b100)
 #define ADES_READDEV(n) ((n << 3) | 0b101)
 #define ADES_READBLOCK(n) ((n << 3) | 0b110)
@@ -35,6 +37,8 @@
 
 #define ADES_AUXREG(n)                  (0x59 + n)
 
+#define ADES_AUXTIMEREG                 (0x61)
+
 #define ADES_MEASUREEN1                 (0x64)
 #define BLOCKEN                         (0x01 << 14)
 
@@ -48,9 +52,16 @@
 
 #define ADES_BALEXP(n)                  (0x70 + n)
 
+#define ADES_BALAUTOUVTHR               (0x7E)
+
+#define ADES_BALDLYCTRL                 (0x7F)
+
 #define ADES_BALCTRL                    (0x80)
+
+#define ADES_BALUVSTAT                  (0x82)
 
 
 bool ADES_init();
 bool ADES_collect_all(uint16_t *raw_cell_voltages, uint16_t *raw_chip_voltages, uint16_t *raw_temps);
-bool ADES_force_balance(uint8_t chip, uint8_t cell);
+bool ADES_force_balance(uint8_t chip, uint8_t cell, bool reset);
+bool ADES_init_balancing();

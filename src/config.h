@@ -1,15 +1,15 @@
 /*** ARCHITECTURE LAYOUT ***/
-#define NUM_CELLS_PER_SEGMENT 27
-#define NUM_THERMS_PER_SEGMENT 6
+#define NUM_CELLS_PER_SEGMENT 2
+#define NUM_THERMS_PER_SEGMENT 6 // change?
 #define NUM_SEGMENTS 2
-#define NUM_CHIPS_PER_SEGMENT 2
+#define NUM_CHIPS_PER_SEGMENT 1 // ??
 #define NUM_CHIPS (NUM_CHIPS_PER_SEGMENT * NUM_SEGMENTS) // Maximum of 32 for ADES175x
 #define NUM_CELLS (NUM_CELLS_PER_SEGMENT * NUM_SEGMENTS)
 #define NUM_CELLS_PER_CHIP  {14, 13}
 #define NUM_THERMS_PER_CHIP {3, 3}
 #define NUM_THERMS (NUM_THERMS_PER_SEGMENT * NUM_SEGMENTS)
 #define THERM_R1_R 10000.0f                     // Resistor value of top resistor in thermistor voltage divider
-#define THERM_NOMINAL_R 10000.0f                        // Nominal resistance of thermistor, usually at 25C
+#define THERM_NOMINAL_R 10000.0f                // Nominal resistance of thermistor, usually at 25C
 
 /*** ADES175x CONSTANTS ***/
 #define MAX_CELLS_PER_CHIP 14
@@ -25,7 +25,6 @@
 #define SPI_INIT_WAIT_MS 100
 
 /*** CAN CONFIG ***/
-#define CAN_PRI FDCAN1
 #define CAN_SEC FDCAN2
 
 /*** TIMEOUTS ***/
@@ -42,6 +41,8 @@
 #define VOLTAGE_DIFF_TIMEOUT_MS 5000
 #define CHIP_VOLT_IRR_TIMEOUT_MS 5000           // Timeout for irrational chip voltage (required?)
 #define SUM_VOLT_COMPARISON_TIMEOUT_MS 5000     // Timeout for difference too large difference between chip volt and sum cell volts
+#define OVERCURRENT_TIMEOUT_MS 5000             // confm val
+#define CURRENT_IRR_TIMEOUT_MS 5000
 
 /*** MAX17851 CONFIG ***/
 #define M17_MAX_RET 3                           // Maximum number of times the STM can unsuccessfully configure a parameter on the MAX17851
@@ -57,9 +58,11 @@
 #define CHIP_VOLTAGE_IRRATIONAL_LOW 30.0f       // Change value from BMS VBLK to LVBMS chip voltage
 #define CHIP_VOLTAGE_IRRATIONAL_HIGH 70.0f      // Change value from BMS VBLK to LVBMS chip voltage
 #define CELL_VOLTAGE_DIFFERENCE_IRRATIONAL 0.5f
-
-#define SUM_VOLT_COMPARE_TOLERANCE 0.5f              // Ask (in questions)
+#define SUM_VOLT_COMPARE_TOLERANCE 0.5f         // Ask (in questions)
 
 /*** CURRENT ***/
 #define CS_OFFSET_VOLTAGE 2.5f
 #define CS_GAIN 250.0f
+#define CURRENT_IRRATIONAL_HIGH 500
+#define OVERCURRENT_POSITIVE 350.0f              // Max current when not charging (cnfm val)
+#define OVERCURRENT_NEGATIVE -41.0f              // Max current when charging (cnfm val)

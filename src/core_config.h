@@ -5,7 +5,7 @@
 
 /***************** CLOCK PARAMETERS ****************************/
 /***************************************************************/
-#define CORE_CLOCK_USE_HSE 1
+#define CORE_CLOCK_USE_HSE 0
 #define CORE_CLOCK_HSE_FREQ 24000
 #define CORE_CLOCK_SYSCLK_FREQ 160000
 #define CORE_CLOCK_HSI_FREQ 16000
@@ -98,8 +98,8 @@
 #define CORE_SPI3_SCK_PORT  GPIOC
 #define CORE_SPI3_SCK_PIN   GPIO_PIN_10
 #define CORE_SPI3_SCK_AF    6
-#define CORE_SPI3_MISO_PORT GPIOC
-#define CORE_SPI3_MISO_PIN  GPIO_PIN_11
+#define CORE_SPI3_MISO_PORT GPIOB
+#define CORE_SPI3_MISO_PIN  GPIO_PIN_4
 #define CORE_SPI3_MISO_AF   6
 #define CORE_SPI3_MOSI_PORT GPIOC
 #define CORE_SPI3_MOSI_PIN  GPIO_PIN_12
