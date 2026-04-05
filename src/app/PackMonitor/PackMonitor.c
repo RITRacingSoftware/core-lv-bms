@@ -33,13 +33,12 @@ float chip_volt_arr[NUM_CHIPS];
 float cell_temp_arr[NUM_THERMS];
 
 static uint16_t raw_cell_volts[NUM_CELLS];
-static uint16_t raw_chip_volts[NUM_CELLS]; // need an array for 1 val? 
+static uint16_t raw_chip_volts[NUM_CELLS];
 static uint16_t raw_temps[NUM_THERMS];
 
 static core_timeout_t cell_volt_irr_timeout;
 static core_timeout_t voltage_diff_timeout;
 static core_timeout_t chip_volt_irr_timeout;
-static core_timeout_t sum_volt_compare_timeout; // unnecessary
 static core_timeout_t out_of_juice_timeout;
 static core_timeout_t temp_irr_timeout;
 
@@ -48,7 +47,6 @@ static void timeout_callback (core_timeout_t *timeout);
 static void get_cell_volts();
 static void get_chip_volt();
 static void get_cell_volt_diff();
-// static void sum_volt_compare();
 static void get_cell_temps();
 
 
@@ -63,7 +61,7 @@ void PackMonitor_init()
 
     voltage_diff_timeout.module = NULL;
     voltage_diff_timeout.ref = FAULT_VOLTAGE_DIFF;
-    voltage_diff_timeout.timeout = VOLTAGE_DIFF_TIMEOUT_MS;
+    voltage_diff_timeout.timeout = CELL_DIFF_TIMEOUT_MS;
     voltage_diff_timeout.callback = timeout_callback;
     voltage_diff_timeout.single_shot = 0;
     core_timeout_insert(&voltage_diff_timeout);
@@ -75,12 +73,6 @@ void PackMonitor_init()
     chip_volt_irr_timeout.single_shot = 0;
     core_timeout_insert(&chip_volt_irr_timeout);
 
-    sum_volt_compare_timeout.module = NULL;
-    sum_volt_compare_timeout.ref = FAULT_SUM_VOLT_COMPARISON;
-    sum_volt_compare_timeout.timeout = SUM_VOLT_COMPARISON_TIMEOUT_MS;
-    sum_volt_compare_timeout.callback = timeout_callback;
-    sum_volt_compare_timeout.single_shot = 0;
-    core_timeout_insert(&sum_volt_compare_timeout);
 
     out_of_juice_timeout.module = NULL;
     out_of_juice_timeout.ref = FAULT_OUT_OF_JUICE;
@@ -100,10 +92,10 @@ void PackMonitor_init()
 
 void PackMonitor_Task_Update() 
 {
+    ADES_collect_all(raw_cell_volts, raw_chip_volts, raw_temps);
     get_cell_volts();
     get_chip_volt();
     get_cell_volt_diff();
-    // sum_volt_compare();
     get_cell_temps();
 }
 
@@ -120,12 +112,12 @@ static void get_cell_volts()
 
     for (int cell = 0; cell < NUM_CELLS; cell++) 
     {
-
         cell_volt = (ADES_CELL_ADC_RANGE_V * (raw_cell_volts[cell] >> 2)/ADES_ADC_RANGE);
 
         rprintf("Cell %d: %d\n", cell, (int)(cell_volt * 1000));
+        rprintf("Raw cell %d: %d\n", cell, raw_cell_volts[cell]);
 
-        if (cell_volt > CELL_VOLTAGE_IRRATIONAL_HIGH || cell_volt < CELL_VOLTAGE_IRRATIONAL_LOW) rational = false;
+        if (cell_volt > CELL_VOLT_IRR_HIGH_V || cell_volt < CELL_VOLT_IRR_LOW_V) rational = false;
         else {
 
             cell_volt_arr[cell] = cell_volt;
@@ -133,7 +125,7 @@ static void get_cell_volts()
             if (cell_volt > max_cell_volt) max_cell_volt = cell_volt;
             else if (cell_volt < min_cell_volt) min_cell_volt = cell_volt;
 
-            if (cell_volt >= CELL_EMPTY_VOLTAGE) core_timeout_reset(&out_of_juice_timeout);
+            if (cell_volt >= CELL_MIN_V) core_timeout_reset(&out_of_juice_timeout); // cell empty
 
         }
         
@@ -152,27 +144,22 @@ static void get_cell_volt_diff()
 {
     float cell_volt_diff = 0.0f;
     cell_volt_diff = max_cell_volt - min_cell_volt;
-    if (cell_volt_diff <= CELL_VOLTAGE_DIFFERENCE_IRRATIONAL) core_timeout_reset(&voltage_diff_timeout);
+    if (cell_volt_diff <= CELL_MAX_DIFF_V) core_timeout_reset(&voltage_diff_timeout);
 }
 
 static void get_chip_volt()
 { 
     bool rational = true;
 
-        chip_volt = (ADES_VBLK_ADC_RANGE_V * (raw_chip_volts[0] >> 2));
+        chip_volt = (ADES_VBLK_ADC_RANGE_V * (raw_chip_volts[0] >> 2)/ADES_ADC_RANGE);
 
-        rprintf("Chip %d: %d\n", (int)(chip_volt * 1000));
+        rprintf("Chip: %d\n", (int)(chip_volt * 1000));
 
-        if ((chip_volt < CHIP_VOLTAGE_IRRATIONAL_LOW) || (chip_volt > CHIP_VOLTAGE_IRRATIONAL_HIGH)) rational = false;
+        if ((chip_volt < VBLK_IRR_LOW_V) || (chip_volt > VBLK_IRR_HIGH_V)) rational = false; // should be chip volt. vblk same?
         else chip_volt_arr[0] = chip_volt;
         
         rprintf("----------------------------------------\n\n");
 }
-
-// static void sum_volt_compare() 
-// {
-//     if ((sum_cell_volt > (chip_volt - SUM_VOLT_COMPARE_TOLERANCE)) || (sum_cell_volt < (chip_volt + SUM_VOLT_COMPARE_TOLERANCE))) core_timeout_reset(&sum_volt_compare_timeout);
-// }
 
 static void get_cell_temps()
 {
@@ -188,9 +175,9 @@ static void get_cell_temps()
         float voltage = (ADES_AUX_ADC_RANGE_V * (raw_temps[0] >> 2)/ADES_ADC_RANGE);
         float res = (voltage * THERM_R1_R)/(ADES_THERM_V - voltage);           // Transfer function for Voltage -> Resistance
         float temp = (3892.0f)/(13.054-logf(THERM_NOMINAL_R/res)) - 273.15f;    // Transfer function for Resistance -> Temperature
-        rprintf("Therm %d: %d\n", therm, raw_temps[therm]);
+        rprintf("Therm %d: %d\n", therm, (int)(voltage*1000));
 
-        if (temp < (TEMP_IRRATIONAL_LOW) || (temp > (TEMP_IRRATIONAL_HIGH))) rational = false;
+        if (temp < (TEMP_IRR_LOW_C) || (temp > (TEMP_IRR_HIGH_C))) rational = false;
         else {
             cell_temp_arr[therm] = temp;
             if (temp > max_temp) max_temp = temp;

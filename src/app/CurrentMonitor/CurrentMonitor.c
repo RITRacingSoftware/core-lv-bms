@@ -37,22 +37,22 @@ void CurrentMonitor_init()
     current_irr_timeout.single_shot = 0;
     core_timeout_insert(&current_irr_timeout);
 
-}
+}   
 
 void CurrentMonitor_Task_Update()
 {
     check_cell_current();
+    // send current over CAN
 }
 
 void check_cell_current() 
 {
-    bool irrational = false;
 
     uint16_t raw_current;
     core_ADC_read_channel(CS_PORT, CS_PIN, &raw_current);
     current = ((3.3f * raw_current/4096.0f) - CS_OFFSET_VOLTAGE) * CS_GAIN;
 
-    if ((current < OVERCURRENT_POSITIVE) || (current > OVERCURRENT_NEGATIVE)) core_timeout_reset(&overcurrent_timeout);
+    if ((current < OVERCURRENT_POSITIVE_I) || (current > OVERCURRENT_NEGATIVE_I)) core_timeout_reset(&overcurrent_timeout);
 
-    if ((current) < CURRENT_IRRATIONAL_HIGH) core_timeout_reset(&current_irr_timeout);
+    if ((current) < CURRENT_IRR_I) core_timeout_reset(&current_irr_timeout);
 }

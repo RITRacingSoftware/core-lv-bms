@@ -18,7 +18,7 @@ void FaultManager_set_fault(uint64_t faultCode)
         faultList |= faultCode;             // add fault code to fault list
         if (!(faultList & ignoreList))      // if faults are not all in ignore list (?)
         {
-            faultList |= FAULT_SHUTDOWN;    // shut down
+            faultList |= FAULT_SHUTDOWN;    // set shut down true
             // send CAN message here
         }
     }

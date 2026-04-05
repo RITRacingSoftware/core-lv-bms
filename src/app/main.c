@@ -51,17 +51,17 @@ void task_1Hz(void *pvParameters)
     while(true)
     {
         LVBMS_1Hz();
-        vTaskDelayUntil(&next_wake_time, 10);
+        vTaskDelayUntil(&next_wake_time, 1000);
     }
 }
 
 void task_heartbeat(void *pvParameters)
 {
     (void) pvParameters;
+    TickType_t next_wake_time = xTaskGetTickCount();
     while(true) {
         core_GPIO_toggle_heartbeat();
-        vTaskDelay(1000 * portTICK_PERIOD_MS);
-        rprintf("Heartbeat\n");
+        vTaskDelayUntil(&next_wake_time, 200);
     }
 }
 
@@ -71,18 +71,21 @@ int main(void)
         hardfault_error_handler();
     }
     
+    rprintf("BMS init");
+
     int err;
     
-    err = xTaskCreate(task_CAN_tx, // task code
-        "CAN_tx", // pcName
-        1000, // uxStackDepth
-        NULL, // pvParameters
-        CAN_TX_PRIORITY, // uxPriority
-        NULL); // pass handle
+    // err = xTaskCreate(task_CAN_tx, // task code
+    //     "CAN_tx", // pcName
+    //     1000, // uxStackDepth
+    //     NULL, // pvParameters
+    //     CAN_TX_PRIORITY, // uxPriority
+    //     NULL); // pass handle
         
-        if (err != pdPASS) {
-            hardfault_error_handler();
-        }
+    //     if (err != pdPASS) {
+    //         rprintf("CAN task failed created");
+    //         hardfault_error_handler();
+    //     }
         
     err = xTaskCreate(task_heartbeat,
         "task_heartbeat",
@@ -94,6 +97,7 @@ int main(void)
     if (err != pdPASS) {
         hardfault_error_handler();
     }
+
         
     err = xTaskCreate(task_100Hz,
         "100hz_task",

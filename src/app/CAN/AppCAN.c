@@ -19,8 +19,8 @@ bool CAN_init()
 
 bool CAN_tx()
 {
-    core_CAN_send_from_tx_queue_task(CAN_SEC);
-    return false;
+    // core_CAN_send_from_tx_queue_task(CAN_SEC);
+    // return false;
 }
 
 void CAN_Task_Update()

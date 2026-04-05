@@ -1,15 +1,11 @@
 /*** ARCHITECTURE LAYOUT ***/
-#define NUM_CELLS_PER_SEGMENT 2
-#define NUM_THERMS_PER_SEGMENT 6 // change?
-#define NUM_SEGMENTS 2
-#define NUM_CHIPS_PER_SEGMENT 1 // ??
-#define NUM_CHIPS (NUM_CHIPS_PER_SEGMENT * NUM_SEGMENTS) // Maximum of 32 for ADES175x
-#define NUM_CELLS (NUM_CELLS_PER_SEGMENT * NUM_SEGMENTS)
-#define NUM_CELLS_PER_CHIP  {14, 13}
-#define NUM_THERMS_PER_CHIP {3, 3}
-#define NUM_THERMS (NUM_THERMS_PER_SEGMENT * NUM_SEGMENTS)
-#define THERM_R1_R 10000.0f                     // Resistor value of top resistor in thermistor voltage divider
-#define THERM_NOMINAL_R 10000.0f                // Nominal resistance of thermistor, usually at 25C
+#define NUM_CHIPS 1
+#define NUM_CELLS 6
+#define NUM_THERMS 6
+
+// Thermistor constants
+#define THERM_R1_R 10000.0f
+#define THERM_NOMINAL_R 10000.0f
 
 /*** ADES175x CONSTANTS ***/
 #define MAX_CELLS_PER_CHIP 14
@@ -25,11 +21,11 @@
 #define SPI_INIT_WAIT_MS 100
 
 /*** CAN CONFIG ***/
-#define CAN_SEC FDCAN2
+#define CAN_PRI FDCAN2
+#define CAN_SEC FDCAN1
 
 /*** TIMEOUTS ***/
 #define ADES_WAKE_TIMEOUT_MS 1000
-#define ADES_RESTART_TIME 1000
 #define ADES_TX_CONFIRM_TIMEOUT_MS 50           // Amount of time to wait after sending a message to see it in the UART RX queue
 #define ADES_TX_TIMEOUT_MS 100                  // Amount of time to wait after sending a register read command to receive the data
 #define ADES_RX_TIMEOUT_MS 1000                 // Timeout for receiving a message from the ADES after transmitting a register read
@@ -38,31 +34,42 @@
 #define OUT_OF_JUICE_TIMEOUT_MS 5000
 #define CELL_VOLT_IRR_TIMEOUT_MS 5000
 #define TEMP_IRR_TIMEOUT_MS 5000
-#define VOLTAGE_DIFF_TIMEOUT_MS 5000
-#define CHIP_VOLT_IRR_TIMEOUT_MS 5000           // Timeout for irrational chip voltage (required?)
-#define SUM_VOLT_COMPARISON_TIMEOUT_MS 5000     // Timeout for difference too large difference between chip volt and sum cell volts
-#define OVERCURRENT_TIMEOUT_MS 5000             // confm val
+#define OVERTEMP_TIMEOUT_MS 5000
+#define CELL_DIFF_TIMEOUT_MS 5000
+#define CHIP_VOLT_IRR_TIMEOUT_MS 5000
+
+// Change?
+#define OVERCURRENT_TIMEOUT_MS 5000             
 #define CURRENT_IRR_TIMEOUT_MS 5000
 
 /*** MAX17851 CONFIG ***/
-#define M17_MAX_RET 3                           // Maximum number of times the STM can unsuccessfully configure a parameter on the MAX17851
+#define M17_MAX_RET 3 // Maximum number of times the STM can unsuccessfully configure a parameter on the MAX17851
 
 /*** MEASUREMENTS ***/
-#define CELL_VOLTAGE_IRRATIONAL_LOW 2.0f
-#define CELL_EMPTY_VOLTAGE 3.0f
+#define CELL_VOLT_IRR_LOW_V 2.0f
+#define CELL_MIN_V 3.0f
 #define CELL_FULL_MIN_V 4.34f
 #define CELL_FULL_MAX_V 4.35f
-#define CELL_VOLTAGE_IRRATIONAL_HIGH 4.5f
-#define TEMP_IRRATIONAL_LOW 0.0f
-#define TEMP_IRRATIONAL_HIGH 100.0f
-#define CHIP_VOLTAGE_IRRATIONAL_LOW 30.0f       // Change value from BMS VBLK to LVBMS chip voltage
-#define CHIP_VOLTAGE_IRRATIONAL_HIGH 70.0f      // Change value from BMS VBLK to LVBMS chip voltage
-#define CELL_VOLTAGE_DIFFERENCE_IRRATIONAL 0.5f
-#define SUM_VOLT_COMPARE_TOLERANCE 0.5f         // Ask (in questions)
+#define CELL_VOLT_IRR_HIGH_V 4.5f
+#define TEMP_IRR_LOW_C 0.0f
+#define TEMP_IRR_HIGH_C 100.0f
+#define TEMP_MAX_C 60.0f
+#define VBLK_IRR_LOW_V 30.0f
+#define VBLK_IRR_HIGH_V 70.0f
+#define CELL_MAX_DIFF_V 0.5f
+#define CURRENT_IRR_I 500
+#define OVERCURRENT_POSITIVE_I 350
+#define OVERCURRENT_NEGATIVE_I -41
+
+
+/*** BALANCING ***/
+#define BAL_UV_THRESHOLD_V 4.4f
+#define BAL_TIMER_S
+#define BAL_DUTY_CYCLE_COEFF 15   // Duty cycle in units of 6.25%, with 0x0 = 6.25% and 0xF = 100%
+// When balancing, every nth sample will be replaced with an ADC calibration to keep measurement accurate while pack heats up.
+// 0x0 = Disabled, 0x1 = 2 (every other) cycles, 0x2 = 4 cycles, 0x3 = 8, 0x4 = 12, 0x5 = 16, 0x6 = 24
+#define BAL_CAL_PERIOD 0x3
 
 /*** CURRENT ***/
 #define CS_OFFSET_VOLTAGE 2.5f
 #define CS_GAIN 250.0f
-#define CURRENT_IRRATIONAL_HIGH 500
-#define OVERCURRENT_POSITIVE 350.0f              // Max current when not charging (cnfm val)
-#define OVERCURRENT_NEGATIVE -41.0f              // Max current when charging (cnfm val)

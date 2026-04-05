@@ -19,7 +19,6 @@
 
 static uint8_t num_active_chips;
 
-
 static bool transmit_ADES_message_raw(uint8_t *msg, uint8_t len);
 static bool wake_daisy_chain();
 static bool command_hello_all();
@@ -59,14 +58,13 @@ bool M17_init()
 
     /*** M17 CONFIG ***/
     // if (!reg_write(M17_CONFIG_GEN0, 2)) return false;                                    // CONFIG_GEN0 - Set number of chips
-    if (!reg_write(M17_CONFIG_GEN1, BAUD_RATE_2M)) return false;                                    // CONFIG_GEN1 - Set baudrate to 2Mbps and differential UART
+    if (!reg_write(M17_CONFIG_GEN1, BAUD_RATE_2M)) return false;                                    // CxONFIG_GEN1 - Set baudrate to 2Mbps and differential UART
     if (!reg_write(M17_CONFIG_GEN3, ALRTPCKT_TIMING_1280_US)) return false;                         // CONFIG_GEN3 - Set keep-alive to 1.28ms
     if (!reg_write(M17_CONFIG_GEN4, MS_EN_MASTER_SINGLE_UART | DC_EN_DATA_RX | ALIVECOUNT_EN)) return false;     // CONFIG_GEN4 - Set single UART, enable data check byte
     if (!reg_write(M17_CONFIG_GEN5, ALRTPCKT_DBNC_16)) return false;                                // CONFIG_GEN5 - Allow 16 consecutive errors before error is flagged
     if (!reg_write(M17_CONFIG_COMM, COMM_TO_DLY_DISABLE)) return false;                             // CONFIG_COMM - Disable comm timeout
     if (!check_rx_errors()) return false;
     rprintf("Initialized first part\n");
-
 
     if (!wake_daisy_chain()) return false;
     rprintf("Woke daisy chain\n");
@@ -99,7 +97,9 @@ bool M17_write_ADES_reg(uint8_t dest, uint8_t reg_addr, uint16_t msg)
 
     // Receive transmission
     uint8_t tempBuf[6];
+
     if (!read_rx_buf(tempBuf, 6)) return false;
+
     if (!check_rx_errors()) return false;
     /*
     rprintf("Read1 begin\n");
@@ -236,6 +236,8 @@ static bool command_hello_all()
     uint8_t rxBuf[4];
     read_rx_buf(rxBuf, 4);
 
+    // rprintf("RX EMPTY after hello all read_rx_buf: %d\n", (reg_read(M17_STATUS_RX) & RX_EMPTY)); // debug print
+
     num_active_chips = rxBuf[2];
     rprintf("From hello all: num_active_chips: %d\n", num_active_chips);
     
@@ -344,7 +346,7 @@ static bool read_rx_buf(uint8_t *rxBuf, uint8_t len)
     core_SPI_read_write(M17_SPI, NULL, 0, rxBuf, len);
     core_SPI_stop(M17_SPI);
 
-    // TODO: Fix this. Actuall check LSSM byte
+    // TODO: Fix this. Actually check LSSM byte.
     // Read LSSM byte
     if (rxBuf[len - 1] != M17_NORMAL_LSSM) {
         FaultManager_LSSM(rxBuf[len - 2]);

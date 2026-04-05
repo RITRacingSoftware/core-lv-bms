@@ -12,7 +12,7 @@
 #include "timeout.h"
 #include "boot.h"
 
-
+#include "config.h"
 #include "AppGPIO.h"
 #include "AppCAN.h"
 #include "FaultManager.h"
@@ -22,9 +22,6 @@
 
 #include "M17.h"
 #include "ADES.h"
-
-const uint8_t num_cells_per_chip[NUM_CHIPS] = NUM_CELLS_PER_CHIP;
-const uint8_t num_therms_per_chip[NUM_THERMS] = NUM_THERMS_PER_CHIP;
 
 bool LVBMS_init()
 {
@@ -43,7 +40,6 @@ bool LVBMS_init()
 
     if (!M17_init()) return false;
 
-
     if (!ADES_init()) return false;
 
     core_timeout_start_all();
@@ -55,12 +51,13 @@ bool LVBMS_init()
 
 void LVBMS_1Hz()
 {
+    PackMonitor_Task_Update();
     CurrentMonitor_Task_Update();
 }
 
 void LVBMS_100Hz()
 {
-    PackMonitor_Task_Update();
+    // PackMonitor_Task_Update();
     // ChargeMonitor_Task_Update();
     GPIO_Task_Update();
 }

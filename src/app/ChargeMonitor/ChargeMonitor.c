@@ -26,15 +26,19 @@ void ChargeMonitor_Task_Update()
 
     switch(state)
     {
+        /*
+        If charger
+        */
         case ChargingState_DISCONNECTED:
         // Detect if charger gets connected
         if (core_GPIO_digital_read(CHG_IN_PORT, CHG_IN_PIN)) state = ChargingState_CHARGING;
 
 
+        /*
+        Enable charging (pull pin high)
+        */
         case ChargingState_CHARGING:
-        // Enable charging (pull pin high)
         core_GPIO_digital_write(CHG_ENA_PORT, CHG_ENA_PIN, true); // need to check whether charging already?
-
 
 
         /*  Pause charging

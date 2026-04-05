@@ -1,6 +1,14 @@
+# TO TRY
+
+- [ ] Message length incorrect? (6)
+Message Length
+Before composing any message, the host should compute the message’s length (in bytes, not characters) based on both
+the type of command (read or write) and the device count.
+
 # DO BEFORE TESTING:
 
-- Fix cell layout stuff in config file
+- [X] Fix cell layout stuff in config file
+- Pull up which pin for hard start? STM_ENA
 
 
 # INFO:
@@ -45,9 +53,9 @@ Always monitor everything no matter the state
 
 # QUESTIONS:
 
-- [ ] Where should startup code be? main?
+- [ ] Where should startup code be? main? Probably
 
-- [ ] When should shutdown fault vector be sent out. Where in code should shutdown occur?
+- [ ] When should shutdown fault vector be sent out? Where in code should shutdown occur? This actually seems clear
 
 
 # ANSWERED

@@ -17,5 +17,9 @@
 #define LED2_PORT GPIOC
 #define LED2_PIN GPIO_PIN_2
 
+// STM enable pin
+#define STM_ENA_PORT GPIOB
+#define STM_ENA_PIN GPIO_PIN_1
+
 void GPIO_init();
 void GPIO_Task_Update();
