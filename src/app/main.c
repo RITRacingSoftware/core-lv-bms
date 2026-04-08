@@ -1,13 +1,12 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include <stm32g4xx_hal.h>
+
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
 #include "rtt.h"
-
-#include <stm32g4xx_hal.h>
-
 #include "can.h"
 #include "clock.h"
 #include "gpio.h"
@@ -15,32 +14,42 @@
 #include "boot.h"
 #include "core_config.h"
 
-#include "main.h"
 #include "AppCAN.h"
 #include "BMS.h"
 #include "PackMonitor.h"
 
+// RTOS Task periods
+#define TASK_PERIOD_HEARTBEAT_MS 200
+#define TASK_PERIOD_1KHZ_MS 1
+#define TASK_PERIOD_1HZ_MS 1000
 
-#define LVBMS_1HZ_PRIORITY (tskIDLE_PRIORITY + 1)
-#define LVBMS_100HZ_PRIORITY (tskIDLE_PRIORITY + 1)
+#define HEARTBEAT_PRIORITY (tskIDLE_PRIORITY + 1)
 #define CAN_TX_PRIORITY (tskIDLE_PRIORITY + 2)
-#define HEARTBEAT_PRIORITY (tskIDLE_PRIORITY + 4)
+#define LVBMS_1KHZ_PRIORITY (tskIDLE_PRIORITY + 2)
+#define LVBMS_1HZ_PRIORITY (tskIDLE_PRIORITY + 1)
 
-void task_CAN_tx(void *pvParameters)
+static void hardfault_error_handler();
+static void stack_overflow_error_handler();
+
+
+void task_heartbeat(void *pvParameters)
 {
     (void) pvParameters;
-    CAN_Task_Update();
-    if (!CAN_tx()) hardfault_error_handler();
+    TickType_t next_wake_time = xTaskGetTickCount();
+    while(true) {
+        core_GPIO_toggle_heartbeat();
+        vTaskDelayUntil(&next_wake_time, TASK_PERIOD_HEARTBEAT_MS);
+    }
 }
 
-void task_100Hz(void *pvParameters)
+void task_1kHz(void *pvParameters)
 {
     (void) pvParameters;
     TickType_t next_wake_time = xTaskGetTickCount();
     while(true)
     {
-        LVBMS_100Hz();
-        vTaskDelayUntil(&next_wake_time, 10);
+        LVBMS_1kHz();
+        vTaskDelayUntil(&next_wake_time, TASK_PERIOD_1KHZ_MS);
     }
 }
 
@@ -51,27 +60,23 @@ void task_1Hz(void *pvParameters)
     while(true)
     {
         LVBMS_1Hz();
-        vTaskDelayUntil(&next_wake_time, 1000);
+        vTaskDelayUntil(&next_wake_time, TASK_PERIOD_1HZ_MS);
     }
 }
 
-void task_heartbeat(void *pvParameters)
+void task_CAN_tx(void *pvParameters)
 {
     (void) pvParameters;
-    TickType_t next_wake_time = xTaskGetTickCount();
-    while(true) {
-        core_GPIO_toggle_heartbeat();
-        vTaskDelayUntil(&next_wake_time, 200);
-    }
+    CAN_task_update();
+    if (!CAN_tx()) hardfault_error_handler();
 }
+
 
 int main(void) 
 {
-    if (!LVBMS_init()) {
-        hardfault_error_handler();
-    }
-    
-    rprintf("BMS init");
+    HAL_Init();
+
+    if (!LVBMS_init()) hardfault_error_handler();
 
     int err;
     
@@ -99,11 +104,11 @@ int main(void)
     }
 
         
-    err = xTaskCreate(task_100Hz,
-        "100hz_task",
+    err = xTaskCreate(task_1kHz,
+        "1kHz_task",
         1000,
         NULL,
-        LVBMS_100HZ_PRIORITY,
+        LVBMS_1KHZ_PRIORITY,
         NULL);
         
     if (err != pdPASS) {
@@ -111,8 +116,8 @@ int main(void)
     }
 
     err = xTaskCreate(task_1Hz,
-        "1hz_task",
-        1000,
+        "1Hz_task",
+        2000,
         NULL,
         LVBMS_1HZ_PRIORITY,
         NULL);

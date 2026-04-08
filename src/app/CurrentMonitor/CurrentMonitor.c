@@ -1,27 +1,33 @@
-#include <stdbool.h>
-#include <stddef.h>
-
-#include "ADC.h"
-#include "timeout.h"
-#include "config.h"
-
 #include "CurrentMonitor.h"
-#include "FaultManager.h"
 
-float current;
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "adc.h"
+#include "can.h"
+#include "filter.h"
+#include "timeout.h"
+#include "rtt.h"
+
+#include "FaultManager.h"
+#include "config.h"
+#include "common_macros.h"
+#include "AppCAN.h"
+
+core_filter_t filt;
 
 static core_timeout_t overcurrent_timeout;
 static core_timeout_t current_irr_timeout;
 
 static void timeout_callback (core_timeout_t *timeout);
 
-static void check_cell_current();
-
 void CurrentMonitor_init()
 {
 
     core_ADC_init(ADC5);
     core_ADC_setup_pin(CS_PORT, CS_PIN, 1);
+
+    core_filter_exp_lowpass_init(0.1f, &filt);
 
     overcurrent_timeout.module = NULL;
     overcurrent_timeout.ref = FAULT_OVERCURRENT;
@@ -39,20 +45,22 @@ void CurrentMonitor_init()
 
 }   
 
-void CurrentMonitor_Task_Update()
+bool CurrentMonitor_task_update()
 {
-    check_cell_current();
-    // send current over CAN
-}
+    uint16_t raw_current = 1919;
 
-void check_cell_current() 
-{
-
-    uint16_t raw_current;
     core_ADC_read_channel(CS_PORT, CS_PIN, &raw_current);
-    current = ((3.3f * raw_current/4096.0f) - CS_OFFSET_VOLTAGE) * CS_GAIN;
 
-    if ((current < OVERCURRENT_POSITIVE_I) || (current > OVERCURRENT_NEGATIVE_I)) core_timeout_reset(&overcurrent_timeout);
+    float filt_v = (3.3f * raw_current/4096.0f);
+    float unfilt_v = SCALE(filt_v, 0.0f, 3.03f, 0.0f, 5.0f);
+    float current = (unfilt_v - CS_OFFSET_VOLTAGE) * CS_GAIN;
 
-    if ((current) < CURRENT_IRR_I) core_timeout_reset(&current_irr_timeout);
+    // come back to
+    
+    if ((current < OVERCURRENT_POS_I) ||(current > OVERCURRENT_NEG_I)) core_timeout_reset(&overcurrent_timeout);
+
+    if (current > CS_IRR_L) {
+        core_timeout_reset(&current_irr_timeout);
+        // if (!CAN_pack_and_send_current(core_filter_update(current, &filt))) return false;
+    }
 }

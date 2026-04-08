@@ -48,7 +48,7 @@ bool ADES_init()
 
     if (!M17_write_ADES_reg(ADES_WRITEDEV(0), ACQCFG, ADCCALEN));
 
-    // poop_loop();
+    poop_loop();
 
     //
     
@@ -107,8 +107,6 @@ bool ADES_collect_all(uint16_t *raw_cell_voltages, uint16_t *raw_chip_voltages, 
 
     if (!M17_read_ADES_reg(ADES_READDEV(0), ADES_BLOCKREG, raw_chip_voltages, 1)) {__BKPT(0); return false;};
     if (!M17_read_ADES_reg(ADES_READDEV(0), ADES_CELLREG(5), &rx, 1));
-
-    rprintf("Raw cell 5: %d\n\n", rx);
     
     /*
     for (int i = 0; i < NUM_CELLS; i++) {

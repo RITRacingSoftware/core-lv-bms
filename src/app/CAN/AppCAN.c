@@ -12,9 +12,9 @@ void CAN_error_handler()
 
 bool CAN_init()
 {
-    if (!core_CAN_init(CAN_SEC, 10000000)) return false;
+    // if (!core_CAN_init(CAN_SEC, 10000000)) return false;
     
-    return true;
+    // return true;
 }
 
 bool CAN_tx()
@@ -23,7 +23,7 @@ bool CAN_tx()
     // return false;
 }
 
-void CAN_Task_Update()
+void CAN_task_update()
 {
     // requires DBC functions for packing
 }

@@ -58,8 +58,8 @@
 #define VBLK_IRR_HIGH_V 70.0f
 #define CELL_MAX_DIFF_V 0.5f
 #define CURRENT_IRR_I 500
-#define OVERCURRENT_POSITIVE_I 350
-#define OVERCURRENT_NEGATIVE_I -41
+#define OVERCURRENT_POS_I 350
+#define OVERCURRENT_NEG_I -41
 
 
 /*** BALANCING ***/
@@ -73,3 +73,4 @@
 /*** CURRENT ***/
 #define CS_OFFSET_VOLTAGE 2.5f
 #define CS_GAIN 250.0f
+#define CS_IRR_L -200.0f

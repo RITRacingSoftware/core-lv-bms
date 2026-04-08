@@ -8,7 +8,5 @@ extern const uint8_t num_cells_per_chip[NUM_CHIPS];
 extern const uint8_t num_therms_per_chip[NUM_CHIPS];
 
 bool LVBMS_init();
-void LVBMS_Task_Update();
-
-void LVBMS_1Hz();
-void LVBMS_100Hz();
+bool LVBMS_1kHz();
+bool LVBMS_1Hz();

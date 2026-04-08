@@ -26,22 +26,18 @@
 bool LVBMS_init()
 {
     core_heartbeat_init(HEARTBEAT_PORT, HEARTBEAT_PIN);
-    core_GPIO_set_heartbeat(true);
     
-    if (!core_clock_init()){
-        return false;
-    }    
-    
-    // core_boot_init();
+    if (!core_clock_init()) return false;
     
     core_RTT_init();
-
     GPIO_init();
 
     if (!M17_init()) return false;
-
     if (!ADES_init()) return false;
 
+    PackMonitor_init();
+    CAN_init();
+    ChargeMonitor_init();
     core_timeout_start_all();
     
     return true;
@@ -49,15 +45,18 @@ bool LVBMS_init()
 
 }
 
-void LVBMS_1Hz()
+bool LVBMS_1Hz()
 {
-    PackMonitor_Task_Update();
-    CurrentMonitor_Task_Update();
+    ChargeMonitor_task_update();
+    PackMonitor_task_update();
+    FaultManager_task_update();
+    return true;
 }
 
-void LVBMS_100Hz()
+bool LVBMS_1kHz()
 {
-    // PackMonitor_Task_Update();
-    // ChargeMonitor_Task_Update();
-    GPIO_Task_Update();
+    if (!CurrentMonitor_task_update()) {
+        return false;
+    }
+    core_timeout_check_all();
 }

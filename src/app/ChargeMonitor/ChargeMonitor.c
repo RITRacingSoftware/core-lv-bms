@@ -3,86 +3,87 @@
 
 #include "gpio.h"
 
+#include "AppGPIO.h"
 #include "ChargeMonitor.h"
 #include "config.h"
 #include "PackMonitor.h"
+#include "FaultManager.h"
 
-float max_cell_volt_balance = 0;
-int max_cell_index = 0;
+// revisit 
 
-static ChargingState_e state;
+static ChargeState_e state;
+static uint16_t bal_arr[NUM_CHIPS] = {0};
 
-// needs getter for state? VC state machine has one
-
-void ChargeMonitor_init()
+bool ChargeMonitor_init()
 {
-    core_GPIO_init(CHG_IN_PORT, CHG_IN_PIN, GPIO_MODE_INPUT, GPIO_PULLDOWN);
-    core_GPIO_init(CHG_ENA_PORT, CHG_ENA_PIN, GPIO_MODE_OUTPUT_PP, GPIO_PULLDOWN); // should be pulldown?
-    state = ChargingState_DISCONNECTED;
+    core_GPIO_digital_write(CHG_ENA_PORT, CHG_ENA_PIN, false);
+
+    if (core_GPIO_digital_read(CHG_IN_PORT, CHG_IN_PIN)) {
+        ChargeMonitor_set_state(ChargeState_CONNECTED_CHARGING);
+        return true;
+    }       
+    ChargeMonitor_set_state(ChargeState_DISCONNECTED);
+    return false;
 }
 
-void ChargeMonitor_Task_Update()
+bool ChargeMonitor_task_update()
 {
+    if ((state != ChargeState_DISCONNECTED) && (!core_GPIO_digital_read(CHG_IN_PORT, CHG_IN_PIN))) {
+        FaultManager_set_err(ERR_CHARGING_DISCONNECTED);
+    }
+
+    core_GPIO_digital_write(CHG_ENA_PORT, CHG_ENA_PIN, true); // CAN_send_chg_request(); in BMS
 
     switch(state)
     {
-        /*
-        If charger
-        */
-        case ChargingState_DISCONNECTED:
-        // Detect if charger gets connected
-        if (core_GPIO_digital_read(CHG_IN_PORT, CHG_IN_PIN)) state = ChargingState_CHARGING;
+        case ChargeState_DISCONNECTED:
+            break;
 
+        case ChargeState_CONNECTED:
+            break;
 
-        /*
-        Enable charging (pull pin high)
-        */
-        case ChargingState_CHARGING:
-        core_GPIO_digital_write(CHG_ENA_PORT, CHG_ENA_PIN, true); // need to check whether charging already?
+        case ChargeState_CONNECTED_CHARGING:
+            if (max_cell_volt >= CELL_FULL_MAX_V) ChargeMonitor_set_state(ChargeState_CONNECTED_COMPLETE); // commented to delete in BMS code
+            break;
 
+        // case ChargeState_CONNECTED_BALANCING:
+        //      balancing logic
+        //      break;
 
-        /*  Pause charging
-            Check if highest cell at CELL_FULL_MAX_V, balance, state = COMPLETE
-            Else, state = CHARGING
-        */
-        case ChargingState_BALANCING:
-        if (core_GPIO_digital_read(CHG_ENA_PORT, CHG_ENA_PIN)) core_GPIO_digital_write(CHG_ENA_PORT, CHG_ENA_PIN, false);
+        case ChargeState_CONNECTED_COMPLETE:
+            break;
+
+        case ChargeState_FAULTED:
+            // send message over CAN
+            break;
+    }
+
+    // send charge state over CAN
+
+    return true;
+}
+
+void ChargeMonitor_set_state(ChargeState_e _state) 
+{
+    // if (state == ChargeState_CONNECTED_BALANCING) ADES_stop_balancing();
+
+    state = _state;
+    if (_state == ChargeState_FAULTED) {
+        FaultManager_set_fault(FAULT_CHARGER);
         core_GPIO_digital_write(CHG_ENA_PORT, CHG_ENA_PIN, false);
-
-        for (int cell = 0; cell < NUM_CELLS; cell++) {
-            if (cell_volt_arr[cell] > max_cell_volt_balance)
-            {
-                max_cell_volt_balance = cell_volt_arr[cell];
-                max_cell_index++;
-            }
-        }
-
-        if (cell_volt_arr[max_cell_index] >= CELL_FULL_MAX_V) {
-            // balancing function for cells other than max full one
-        }  
-        state = ChargingState_CHARGING;
-
-        /* Disable charging (pull pin low)
-        */
-        case ChargingState_COMPLETE:
+    }
+    else if (_state == ChargeState_CONNECTED_BALANCING) {
         core_GPIO_digital_write(CHG_ENA_PORT, CHG_ENA_PIN, false);
-
-
-
-        /* Disable charging (pull pin low)
-        */
-        case ChargingState_FAULT:
+    }
+    else if (_state == ChargeState_CONNECTED_CHARGING) {
+        core_GPIO_digital_write(CHG_ENA_PORT, CHG_ENA_PIN, true);
+    }
+    else if (_state == ChargeState_CONNECTED_COMPLETE) {
         core_GPIO_digital_write(CHG_ENA_PORT, CHG_ENA_PIN, false);
-
     }
 }
 
-void ChargeMonitor_set_fault()
-{
-    state = ChargingState_FAULT;
-}
-
-ChargingState_e getState() 
+ChargeState_e ChargeMonitor_get_state()
 {
     return state;
 }
