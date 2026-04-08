@@ -32,15 +32,11 @@ bool ADES_init()
     // if (!M17_write_ADES_reg(ADES_WRITEDEV(1), 0x6, 1 << 15)) return false;
     
     // Enable the block voltage measurement and every chip that's activated
-    for (int chip = 0; chip < M17_num_active_chips(); chip++) {
-        if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_MEASUREEN1, (MASK(NUM_CELLS) | BLOCKEN))) return false;
-    }
+    if (!M17_write_ADES_reg(ADES_WRITEDEV(0), ADES_MEASUREEN1, (MASK(NUM_CELLS) | BLOCKEN))) return false;
     rprintf("Init block voltages\n");
 
     // Enable the thermistor measurements on every chip that's activated
-    for (int chip = 0; chip < M17_num_active_chips(); chip++) {
-        if (!M17_write_ADES_reg(ADES_WRITEDEV(chip), ADES_MEASUREEN2, MASK(NUM_THERMS))) return false;
-    }
+    if (!M17_write_ADES_reg(ADES_WRITEDEV(0), ADES_MEASUREEN2, MASK(NUM_THERMS))) return false;
     rprintf("Init therm voltages\n");
 
     // Set all AUX/GPIO pins to analog in
@@ -50,8 +46,9 @@ bool ADES_init()
     if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_AUXTIMEREG, 500)) return false;
     rprintf("Init aux settling time\n");
 
+    if (!M17_write_ADES_reg(ADES_WRITEDEV(0), ACQCFG, ADCCALEN));
 
-    poop_loop();
+    // poop_loop();
 
     //
     
@@ -82,39 +79,36 @@ bool ADES_collect_all(uint16_t *raw_cell_voltages, uint16_t *raw_chip_voltages, 
     uint16_t rxBuf[NUM_CHIPS] = {0};
     uint32_t t = HAL_GetTick();
 
-    if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_SCANCTRL, SCAN)) {__BKPT(0); return false;}
+    if (!M17_write_ADES_reg(ADES_WRITEALL, ADES_SCANCTRL, SCAN | SCANMODE)) {__BKPT(0); return false;}
 
     // Request a scan of the ADCs, for both voltages and temps.
     // Wait until every chip is done scanning and ready to read data
-    // while (scanning)
-    // {
-    //     // Make sure it isn't taking too long to scan
-    //     if (HAL_GetTick() - t >= ADES_SCAN_TIMEOUT_MS) {
-    //         FaultManager_set_err(ERR_ADES_SCAN_TIMEOUT);
-    //         return false;
-    //     }
-    //     if (!M17_read_ADES_reg(ADES_READALL, ADES_SCANCTRL, &scanBuf, NUM_CHIPS)) {__BKPT(1); return false;}
-    //     if (scanBuf & DATARDY) scanning = false;
-    // }
+    while (scanning)
+    {
+        // Make sure it isn't taking too long to scan
+        if (HAL_GetTick() - t >= ADES_SCAN_TIMEOUT_MS) {
+            FaultManager_set_err(ERR_ADES_SCAN_TIMEOUT);
+            return false;
+        }
+        if (!M17_read_ADES_reg(ADES_READALL, ADES_SCANCTRL, &scanBuf, NUM_CHIPS)) {__BKPT(1); return false;}
+        if (scanBuf & DATARDY) scanning = false;
+    }
 
     uint8_t voltages_read = 0;
     uint8_t temps_read = 0;
     uint8_t rxLen = 0;
-    for (int chip = 0; chip < M17_num_active_chips(); chip++)
-    {
-        if (!M17_read_ADES_block(chip, ADES_CELLREG(0), raw_cell_voltages + voltages_read, NUM_CELLS)) return false;
-        voltages_read += rxLen;  // Increment pointer to how many cells have been read
- 
-        if (!M17_read_ADES_block(chip, ADES_AUXREG(0), raw_temps + temps_read, NUM_THERMS)) return false;
-        temps_read += rxLen;    // Increment pointer to how many temps have been read
-    }
+    if (!M17_read_ADES_block(0, ADES_CELLREG(0), raw_cell_voltages, NUM_CELLS)) return false;
+    voltages_read += rxLen;  // Increment pointer to how many cells have been read
+
+    if (!M17_read_ADES_block(0, ADES_AUXREG(0), raw_temps, NUM_THERMS)) return false;
+    temps_read += rxLen;    // Increment pointer to how many temps have been read
 
     uint16_t rx;
 
-    if (!M17_read_ADES_reg(ADES_READALL, ADES_BLOCKREG, raw_chip_voltages, M17_num_active_chips())) {__BKPT(0); return false;};
+    if (!M17_read_ADES_reg(ADES_READDEV(0), ADES_BLOCKREG, raw_chip_voltages, 1)) {__BKPT(0); return false;};
     if (!M17_read_ADES_reg(ADES_READDEV(0), ADES_CELLREG(5), &rx, 1));
 
-    rprintf("Raw cell 5: %d\n", rx);
+    rprintf("Raw cell 5: %d\n\n", rx);
     
     /*
     for (int i = 0; i < NUM_CELLS; i++) {

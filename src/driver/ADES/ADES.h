@@ -23,6 +23,9 @@
 #define ALIVECNT                        (0x01 << 9)
 #define ALERTEN                         (0x01 << 1)
 
+#define ACQCFG                          (0x62)
+#define ADCCALEN                        (0x01 << 14)
+
 #define ADES_AUXGPIOCFG                 (0x16)
 #define GPIOEN0                         (0x01 << 8)
 #define GPIOEN1                         (0x01 << 9)
@@ -46,6 +49,7 @@
 
 #define ADES_SCANCTRL                   (0x66)
 #define SCAN                            (0x01)
+#define SCANMODE                        (0x01 << 1)     // for ramp scan
 #define DATARDY                         (0x01 << 13)
 
 #define ADES_BALSWCTRL                  (0x6F)

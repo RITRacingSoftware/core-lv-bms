@@ -33,7 +33,7 @@ float chip_volt_arr[NUM_CHIPS];
 float cell_temp_arr[NUM_THERMS];
 
 static uint16_t raw_cell_volts[NUM_CELLS];
-static uint16_t raw_chip_volts[NUM_CELLS];
+static uint16_t raw_chip_volts[NUM_CHIPS];
 static uint16_t raw_temps[NUM_THERMS];
 
 static core_timeout_t cell_volt_irr_timeout;
@@ -106,7 +106,6 @@ static void timeout_callback (core_timeout_t *timeout)
 
 static void get_cell_volts() 
 {
-
     bool rational = true;
     float cell_volt = 0.0f;
 
@@ -130,7 +129,6 @@ static void get_cell_volts()
         }
         
         sum_cell_volt += cell_volt;
-        
     }
 
     rprintf("----------------------------------------\n\n");
@@ -157,6 +155,8 @@ static void get_chip_volt()
 
         if ((chip_volt < VBLK_IRR_LOW_V) || (chip_volt > VBLK_IRR_HIGH_V)) rational = false; // should be chip volt. vblk same?
         else chip_volt_arr[0] = chip_volt;
+
+        // add timeoout reset
         
         rprintf("----------------------------------------\n\n");
 }

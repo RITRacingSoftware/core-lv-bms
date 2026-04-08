@@ -57,7 +57,7 @@ bool M17_init()
     while (HAL_GetTick() - ADES_restartTime < M17_ADES_RESTART_TIME_MS) {}
 
     /*** M17 CONFIG ***/
-    // if (!reg_write(M17_CONFIG_GEN0, 2)) return false;                                    // CONFIG_GEN0 - Set number of chips
+    if (!reg_write(M17_CONFIG_GEN0, 1)) return false;                                    // CONFIG_GEN0 - Set number of chips
     if (!reg_write(M17_CONFIG_GEN1, BAUD_RATE_2M)) return false;                                    // CxONFIG_GEN1 - Set baudrate to 2Mbps and differential UART
     if (!reg_write(M17_CONFIG_GEN3, ALRTPCKT_TIMING_1280_US)) return false;                         // CONFIG_GEN3 - Set keep-alive to 1.28ms
     if (!reg_write(M17_CONFIG_GEN4, MS_EN_MASTER_SINGLE_UART | DC_EN_DATA_RX | ALIVECOUNT_EN)) return false;     // CONFIG_GEN4 - Set single UART, enable data check byte
@@ -136,7 +136,7 @@ bool M17_read_ADES_reg(uint8_t dest, uint8_t reg_addr, uint16_t *rxBuf, uint8_t 
     txBuf[4] = calculate_PEC(txBuf + 1, 3);     // PEC for txBuf[1] -> txBuf[3]
     txBuf[5] = 0x00;                            // Alive byte
 
-    transmit_ADES_message_raw(txBuf, 6);
+    if(!transmit_ADES_message_raw(txBuf, 6)) {__BKPT(2); return false;}
 
     WAIT_TIMEOUT((reg_read(M17_STATUS_RX) & RX_STOP), ADES_RX_TIMEOUT_MS, FAULT_M17, ERR_NO_RX);
     
@@ -160,7 +160,7 @@ bool M17_read_ADES_block(uint8_t dest, uint8_t reg_addr, uint16_t *rxBuf, uint8_
     txBuf[5] = calculate_PEC(txBuf + 1, 4);     // PEC for txBuf[1] -> txBuf[4]
     txBuf[6] = 0x00;                            // Alive byte
 
-    transmit_ADES_message_raw(txBuf, 7);        // Transmit length + fullLen
+    if (!transmit_ADES_message_raw(txBuf, 7)) {__BKPT(2); return false;}        // Transmit length + fullLen
 
     WAIT_TIMEOUT((reg_read(M17_STATUS_RX) & RX_STOP), ADES_RX_TIMEOUT_MS, FAULT_M17, ERR_NO_RX);
     
