@@ -292,12 +292,12 @@
 /**
   * @brief  Bootloader board ID
   */
-#define CORE_BOOT_FDCAN_ID 0x007
+#define CORE_BOOT_FDCAN_ID 0x003
 /**
   * @brief  Bootloader master ID. Status packets from the bootloader will have
   *         this value in the ID field of the extended CAN ID.
   */
-#define CORE_BOOT_FDCAN_MASTER_ID 0x087
+#define CORE_BOOT_FDCAN_MASTER_ID 0x083
 /**
   * @brief  Broadcast ID to which this board will respond. Only used for bank
   *         enumeration and reset.

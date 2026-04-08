@@ -25,4 +25,4 @@ void GPIO_Task_Update()
     
 }
 
-void GPIO_set_shutdown_pin(bool state) { core_GPIO_digital_write(LV_ENA_PIN, LV_ENA_PIN, state); }
+void GPIO_set_shutdown_pin(bool state) { core_GPIO_digital_write(LV_ENA_PORT, LV_ENA_PIN, true); }

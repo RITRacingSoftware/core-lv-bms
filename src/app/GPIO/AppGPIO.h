@@ -2,8 +2,11 @@
 
 #include <stdbool.h>
 
-#define CS_PORT GPIOA
-#define CS_PIN GPIO_PIN_15
+#define CS_PORT GPIOB
+#define CS_PIN GPIO_PIN_13
+
+#define CS_REF_PORT GPIOB
+#define CS_REF_PIN  GPIO_PIN_14
 
 //heartbeat
 #define HEARTBEAT_PORT GPIOB
@@ -35,3 +38,4 @@
 
 void GPIO_init();
 void GPIO_Task_Update();
+void GPIO_set_shutdown_pin(bool state);

@@ -38,6 +38,7 @@ bool LVBMS_init()
     PackMonitor_init();
     CAN_init();
     ChargeMonitor_init();
+    CurrentMonitor_init();
     core_timeout_start_all();
     
     return true;
@@ -50,13 +51,14 @@ bool LVBMS_1Hz()
     ChargeMonitor_task_update();
     PackMonitor_task_update();
     FaultManager_task_update();
+    CurrentMonitor_task_update();
     return true;
 }
 
 bool LVBMS_1kHz()
 {
-    if (!CurrentMonitor_task_update()) {
-        return false;
-    }
+    // if (!CurrentMonitor_task_update()) {
+    //     return false;
+    // }
     core_timeout_check_all();
 }

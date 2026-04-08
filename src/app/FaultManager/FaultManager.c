@@ -4,7 +4,6 @@
 #include "rtt.h"
 #include "config.h"
 #include "ChargeMonitor.h"
-#include "AppGPIO.c"
 
 static uint64_t faultList = 0;
 static uint64_t ignoreList = 0;
