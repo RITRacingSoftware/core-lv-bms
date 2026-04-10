@@ -1,111 +1,70 @@
-BO_ <ID> LVBMS_CellOverview: 8 LVBMS
- SG_ BMS_Overview_Drains : 51|7@1+ (1,0) [0|76] "" Vector__XXX // what is this?
- SG_ BMS_Overview_VoltMin : 24|9@1+ (0.01,0) [0|5.12] "V"  Vector__XXX // dash doesn't need these values. still pack? 
- SG_ BMS_Overview_VoltMax : 33|9@1+ (0.01,0) [0|5.12] "V"  Vector__XXX // formerly sent to dash
- SG_ BMS_Overview_VoltAvg : 42|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Overview_TempAvg : 16|8@1- (1,0) [-128|127] "C" Vector__XXX
- SG_ BMS_Overview_TempMin : 0|8@1- (1,0) [-128|127] "C" Vector__XXX
- SG_ BMS_Overview_TempMax : 8|8@1- (1,0) [-128|127] "C" Vector__XXX
+// <Message Format> <CAN ID> <Message name> : <Data langth> <Transmitter name (optional)>
 
-BO_ <ID> LVBMS_Current_Limit: 8 LVBMS
- SG_ D1_Max_Discharge_Current : 0|16@1+ (1,0) [0|1000] "A" Vector__XXX
- SG_ D2_Max_Charge_Current : 16|16@1+ (1,0) [0|1000] "A" Vector__XXX
- 
+// <Signal syntax> <Signal name> : <Bit start position> | <Number of bits> <Big (0) vs Little (1) endian> <signed (-) vs unsigned (+)> (<scale>, <offset>)[<min val> | <max val>] <unit> <reciever name>
 
-BO_ <ID> LVBMS_Status: 8 LVBMS // ommitted state of charge stuff
- SG_ BMS_Status_ChargeState : 16|5@1+ (1,0) [0|5] "" Vector__XXX
- SG_ BMS_Status_PackVoltage : 21|15@1+ (0.1,0) [0|400] "V"  Vector__XXX
+BO_ <ID> LVBMS_Voltages: 8 LVBMS
+ SG_ LVBMS_Voltages_0 : 0|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
+ SG_ LVBMS_Voltages_1 : 9|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
+ SG_ LVBMS_Voltages_2 : 18|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
+ SG_ lVBMS_Voltages_3 : 27|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
+ SG_ LVBMS_Voltages_4 : 36|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
+ SG_ LVBMS_Voltages_5 : 45|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
 
-BO_ <ID> BMS_FaultVector: 8 LVBMS
- SG_ BMS_FaultVector_CELL_VOLT_IRR
- SG_ BMS_FaultVector_M17
- SG_ BMS_FaultVector_ADES
- SG_ BMS_FaultVector_VOLTAGE_DIFF
- SG_ BMS_FaultVector_CHIP_VOLT_IRR
- SG_ BMS_FaultVector_OUT_OF_JUICE
- SG_ BMS_FaultVector_TEMP_IRR
- SG_ BMS_FaultVector_SHUTDOWN
- SG_ BMS_FaultVector_OVERCURRENT
- SG_ BMS_FaultVector_CURRENT_IRR
- // overtemp?
- // drain failure?
+BO_ <ID> LVBMS_ChipVoltage: 8 LVBMS
+ SG_ LVBMS_Chip_Voltage : 0|13@1+ (0.01,0) [0|30.72] "V" Vector__XXX             // correct max value?
 
-// Copied from old BMS dbc. What for?
-BO_ 701 BMS_FaultAlert: 8 BMS
- SG_ BMS_FaultAlert_code M : 0|6@1+ (1,0) [0|63] "" Vector__XXX
- SG_ BMS_FaultAlert_cell_comm_slave_b m0 : 6|8@1+ (1,0) [0|255] "" Vector__XXX
- SG_ BMS_FaultAlert_temp_comm_slave_b m1 : 6|8@1+ (1,0) [0|255] "" Vector__XXX
- SG_ BMS_FaultAlert_drain_comm_slave_ m2 : 6|8@1+ (1,0) [0|255] "" Vector__XXX
- SG_ BMS_FaultAlert_adc_error_code m3 : 6|8@1+ (1,0) [0|255] "" Vector__XXX
- SG_ BMS_FaultAlert_current m4 : 6|32@1+ (0.001,0) [0|2000] "A" Vector__XXX
- SG_ BMS_FaultAlert_irrational_voltag m5 : 6|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_FaultAlert_voltage_diff m6 : 6|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_FaultAlert_lowest_cell_volta m7 : 6|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_FaultAlert_irrational_temper m8 : 6|16@1+ (0.01,0) [-327.68|327.67] "V" Vector__XXX
- SG_ BMS_FaultAlert_over_temperature m9 : 6|16@1+ (0.01,0) [-327.68|327.67] "V" Vector__XXX
- SG_ BMS_FaultAlert_failed_drain_cell m10 : 6|8@1+ (1,0) [0|255] "" Vector__XXX
+BO_ <ID> LVBMS_Temperatures: 8 LVBMS
+ SG_ LVBMS_Temperatures_0 : 0|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
+ SG_ LVBMS_Temperatures_1 : 10|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
+ SG_ LVBMS_Temperatures_2 : 20|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
+ SG_ LVBMS_Temperatures_3 : 30|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
+ SG_ LVBMS_Temperatures_4 : 40|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
+ SG_ LVBMS_Temperatures_5 : 50|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
 
-// confirm
-BO_ <ID> BMS_Voltages: 8 BMS
- SG_ BMS_Voltages_mux M : 0|5@1+ (1,0) [0|22] "" Vector__XXX
- SG_ BMS_Voltages_A0 m0 : 5|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Voltages_A0 m0 : 5|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Voltages_A0 m0 : 5|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Voltages_A0 m0 : 5|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Voltages_A0 m0 : 5|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Voltages_A0 m0 : 5|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Voltages_B0 m1 : 5|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Voltages_B1 m1: 5|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Voltages_B2 m1 : 5|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Voltages_B3 m1 : 5|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Voltages_B4 m1 : 5|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Voltages_B5 m1 : 5|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
+BO_ <ID> LVBMS_ThermistorVoltages: 8 LVBMS                                       // where collected?
+ SG_ LVBMS_ThermistorVoltages_0 : 3|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
+ SG_ LVBMS_ThermistorVoltages_1 : 12|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
+ SG_ LVBMS_ThermistorVoltages_2 : 21|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
+ SG_ LVBMS_ThermistorVoltages_3 : 30|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
+ SG_ LVBMS_ThermistorVoltages_4 : 39|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
+ SG_ LVBMS_ThermistorVoltages_5 : 48|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
 
-// Thermistor voltages?
+BO_ <ID> LVBMS_DrainStatus: 8 LVBMS                                              // required?
+ SG_ LVBMS_DrainStatus_0 : 0|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LVBMS_DrainStatus_1 : 1|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LVBMS_DrainStatus_2 : 2|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LVBMS_DrainStatus_3 : 3|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LVBMS_DrainStatus_4 : 4|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LVBMS_DrainStatus_5 : 5|1@1+ (1,0) [0|1] "" Vector__XXX
 
-// How many temps? per segment?
-BO_ <ID> BMS_Temperatures: 8 BMS
- SG_ BMS_Temperatures_mux M : 0|3@1+ (1,0) [0|7] "" Vector__XXX
- SG_ BMS_Temperatures_A0 m0 : 3|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
- SG_ BMS_Temperatures_A1 m0 : 13|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
- SG_ BMS_Temperatures_A2 m0 : 23|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
- SG_ BMS_Temperatures_A3 m0 : 33|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
- SG_ BMS_Temperatures_A4 m0 : 43|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
- SG_ BMS_Temperatures_A5 m0 : 53|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
- SG_ BMS_Temperatures_B0 m1 : 3|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
- SG_ BMS_Temperatures_B1 m1 : 13|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
- SG_ BMS_Temperatures_B2 m1 : 23|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
- SG_ BMS_Temperatures_B3 m1 : 33|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
- SG_ BMS_Temperatures_B4 m1 : 43|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
- SG_ BMS_Temperatures_B5 m1 : 53|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
+BO_ <ID> LVBMS_ChargeState: 8 LVBMS
+ SG_ LVBMS_Status_ChargeState : 0|3@1+ (1,0) [0|7] "" Vector__XXX
 
-// Drain status required? Don't think so
+BO_ <ID> LVBMS_CellOverview: 8 LVBMS                                             // required?
+ SG_ LVBMS_Overview_VoltMin : 0|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
+ SG_ LVBMS_Overview_VoltMax : 9|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
+ SG_ LVBMS_Overview_VoltAvg : 18|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
+ SG_ LVBMS_Overview_TempMin : 27|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
+ SG_ LVBMS_Overview_TempMax : 37|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
+ SG_ LVBMS_Overview_TempAvg : 47|10@1+ (0.1,0) [0|102.3] "C" Vector__XXX
 
-// What is this?
-BO_ 900 BMS_Current: 8 BMS
- SG_ BMS_InstCurrentFilt : 0|32@1- (0.001,0) [-100|250] "A"  DASH
+BO_ <ID> LVBMS_FaultVector: 8 LVBMS
+ SG_ LVBMS_FaultVector_SHUTDOWN : 0|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ LVBMS_FaultVector_M17 : 1|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ LVBMS_FaultVector_ADES : 2|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ LVBMS_FaultVector_CELL_VOLT_IRR : 3|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ LVBMS_FaultVector_CHIP_VOLT_IRR : 4|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ LVBMS_FaultVector_TEMP_IRR : 5|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ LVBMS_FaultVector_OUT_OF_JUICE : 6|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ LVBMS_FaultVector_VOLTAGE_DIFF : 7|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ LVBMS_FaultVector_CHARGER : 8|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ LVBMS_FaultVector_OVERTEMP : 9|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ LVBMS_FaultVector_BALANCING : 10|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ LVBMS_FaultVector_OVERCURRENT : 11|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ LVBMS_FaultVector_CURRENT_IRR : 12|1@1+ (1,0) [0|1] ""  Vector__XXX
 
-BO_ <> BMS_HardFaultIndicator: 8 BMS
- SG_ BMS_HardFaultIndicator_task : 0|4@1+ (1,0) [0|15] "" Vector__XXX
+BO_ <ID> LVBMS_ErrorCode: 8 LVBMS
+ SG_ LVBMS_ErrorCode : 0|32@1+ (1,0) [0|0] ""  Vector__XXX                       // is this complete?
 
-// Necessary? How many?
-BO_ 951 BMS_Ref: 8 BMS
- SG_ BMS_Ref_mux M : 0|1@1+ (1,0) [0|1] "" Vector__XXX
- SG_ BMS_Ref_ref0 m0 : 1|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Ref_ref1 m0 : 10|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Ref_ref2 m0 : 19|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Ref_ref3 m0 : 28|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Ref_ref4 m0 : 37|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Ref_ref5 m0 : 46|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Ref_ref6 m1 : 1|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Ref_ref7 m1 : 10|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Ref_ref8 m1 : 19|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Ref_ref9 m1 : 28|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Ref_ref10 m1 : 37|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
- SG_ BMS_Ref_ref11 m1 : 46|9@1+ (0.01,0) [0|5.12] "V" Vector__XXX
-
-// ommited limp mode stuff
-
-CM_ BU_ LVBMS "Low Voltage Battery Management System";
-
-BA_ "SystemSignalLongSymbol" SG_ <> BMS_FaultVector_
+BO_ <ID> LVBMS_Current: 8 BMS                                                   
+ SG_ BMS_InstCurrentFilt : 0|32@1- (0.001,0) [-100|250] "A"  DASH                // send to dash?
