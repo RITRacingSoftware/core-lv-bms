@@ -11,6 +11,7 @@
 #include "ADES.h"
 #include "config.h"
 #include "FaultManager.h"
+#include "AppCAN.h"
 
 float max_temp = TEMP_IRR_LOW_C;
 float min_temp = TEMP_IRR_HIGH_C;
@@ -48,7 +49,7 @@ static void get_cell_volt_diff();
 static bool get_cell_temps();
 
 
-void PackMonitor_init() 
+void PackMonitor_init()
 {
     cell_volt_irr_timeout.module = NULL;
     cell_volt_irr_timeout.ref = FAULT_CELL_VOLT_IRR;
@@ -92,8 +93,6 @@ void PackMonitor_init()
     chip_volt_irr_timeout.single_shot = 0;
     core_timeout_insert(&chip_volt_irr_timeout);
 
-
-
 }
 
 bool PackMonitor_task_update() 
@@ -111,12 +110,12 @@ bool PackMonitor_task_update()
     get_cell_volts();
     get_chip_volt();
     get_cell_volt_diff();
-    get_cell_temps();
+    get_cell_temps(); // returns bool
 
     avg_cell_volt = sum_cell_volt/NUM_CELLS;
     avg_temp = sum_temp/NUM_THERMS;
 
-    // Send pack data over CAN
+    if (!CAN_send_pack_data()) return false;
 
     return true;
 }
@@ -153,7 +152,7 @@ static void get_cell_volts()
     if (rational) core_timeout_reset(&cell_volt_irr_timeout);
 }
 
-static void get_cell_volt_diff() 
+static void get_cell_volt_diff()
 {
     cell_volt_diff = max_cell_volt - min_cell_volt;
     if (cell_volt_diff <= CELL_MAX_DIFF_V) core_timeout_reset(&voltage_diff_timeout);
@@ -198,6 +197,7 @@ static bool get_cell_temps()
     if (rational) core_timeout_reset(&temp_irr_timeout);
     if (!overtemp) core_timeout_reset(&overtemp_timeout);
     rprintf("----------------------------------------\n\n");
+    return true;
     
 }
 

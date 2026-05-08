@@ -1,37 +1,41 @@
 #include <stdint.h>
 #include "FaultManager.h"
 #include "AppGPIO.h"
+#include "AppCAN.h"
 #include "rtt.h"
 #include "config.h"
+#include "can.h"
 #include "ChargeMonitor.h"
 
 static uint64_t faultList = 0;
 static uint64_t ignoreList = 0;
-static uint64_t errorCode = 0;
+static uint64_t errorList = 0;
 
 void FaultManager_set_fault(uint64_t faultCode) 
 {
-    ChargeMonitor_set_state(ChargeState_FAULTED);
+    ChargeMonitor_set_state(ChargeState_CONNECTED_FAULTED);
     if (!(faultList & faultCode)) {
         faultList |= faultCode;
         if (!(faultList & ignoreList)) {
-            faultList |= FAULT_SHUTDOWN; // correct fault?
+            faultList |= FAULT_SHUTDOWN;
             GPIO_set_shutdown_pin(false);
-            // CAN_send_fault_list(faultList);
+            CAN_send_faults_errors(faultList, errorList);
         }
     }
 }
 
-void FaultManager_set_err(uint64_t faultCode) 
+void FaultManager_set_err(uint64_t errorCode, uint8_t tier) 
 {
-    rprintf("Err: %d\n", faultCode);
-    errorCode = faultCode;
-    // Add message with error code to CAN tx queue
+    rprintf("Err: %x, tier: %d\n", errorCode, tier);
+    if (errorCode < 0x00008000) FaultManager_set_fault(FAULT_M17);
+    if (!(errorList & errorCode)) {
+        errorList |= errorCode;
+        CAN_send_faults_errors(faultList, errorList);
+    }
 }
-
+    
 void FaultManager_task_update() {
-    // Send fault list over CAN
-    // Add message with error code to CAN tx queue
+    CAN_send_faults_errors(faultList, errorList);
 }
 
 

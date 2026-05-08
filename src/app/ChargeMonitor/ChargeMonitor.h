@@ -2,13 +2,14 @@
 
 #include <stdbool.h>
 
-typedef enum  {
+typedef enum {
     ChargeState_DISCONNECTED,
     ChargeState_CONNECTED,
     ChargeState_CONNECTED_CHARGING,
+    ChargeState_CONNECTED_SETTLING,
     ChargeState_CONNECTED_BALANCING,
     ChargeState_CONNECTED_COMPLETE,
-    ChargeState_FAULTED
+    ChargeState_CONNECTED_FAULTED
 } ChargeState_e;
 
 bool ChargeMonitor_init();

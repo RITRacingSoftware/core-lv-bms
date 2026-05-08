@@ -3,6 +3,7 @@
 #include "gpio.h"
 
 #include "AppGPIO.h"
+#include "rtt.h"
 
 void GPIO_init()
 {
@@ -25,4 +26,8 @@ void GPIO_Task_Update()
     
 }
 
-void GPIO_set_shutdown_pin(bool state) { core_GPIO_digital_write(LV_ENA_PORT, LV_ENA_PIN, true); }
+void GPIO_set_shutdown_pin(bool state) 
+{ 
+    rprintf("\nLV Disabled\n");
+    core_GPIO_digital_write(LV_ENA_PORT, LV_ENA_PIN, state); 
+}

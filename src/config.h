@@ -21,7 +21,6 @@
 #define SPI_INIT_WAIT_MS 100
 
 /*** CAN CONFIG ***/
-#define CAN_PRI FDCAN2
 #define CAN_SEC FDCAN1
 
 /*** TIMEOUTS ***/
@@ -60,15 +59,17 @@
 #define CURRENT_IRR_I 500
 #define OVERCURRENT_POS_I 350
 #define OVERCURRENT_NEG_I -41
-
+#define AUX_SETTLING_TIME_COEFF 500 //This value is a coefficient, multiplied by 6us.
 
 /*** BALANCING ***/
-#define BAL_UV_THRESHOLD_V 4.4f
-#define BAL_TIMER_S
-#define BAL_DUTY_CYCLE_COEFF 15   // Duty cycle in units of 6.25%, with 0x0 = 6.25% and 0xF = 100%
+#define BAL_UV_THRESHOLD_V CELL_FULL_MIN_V - 0.03f
+#define BAL_UV_THRESHOLD_PACKED ((uint16_t)((BAL_UV_THRESHOLD_V * ADES_ADC_RANGE)/ADES_CELL_ADC_RANGE_V) << 2);
+#define BAL_EXP 60
+#define BAL_DUTY_CYCLE_COEFF 0xa   // Duty cycle in units of 6.25%, with 0x0 = 6.25% and 0xF = 100%
 // When balancing, every nth sample will be replaced with an ADC calibration to keep measurement accurate while pack heats up.
 // 0x0 = Disabled, 0x1 = 2 (every other) cycles, 0x2 = 4 cycles, 0x3 = 8, 0x4 = 12, 0x5 = 16, 0x6 = 24
-#define BAL_CAL_PERIOD 0x3
+#define BAL_CAL_PERIOD 0x4
+#define BAL_SETTLING_TIME_MS 10000
 
 /*** CURRENT ***/
 #define CS_OFFSET_VOLTAGE 2.5f

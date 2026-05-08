@@ -2,12 +2,6 @@
 
 #include <stdbool.h>
 
-#define CS_PORT GPIOB
-#define CS_PIN GPIO_PIN_13
-
-#define CS_REF_PORT GPIOB
-#define CS_REF_PIN  GPIO_PIN_14
-
 //heartbeat
 #define HEARTBEAT_PORT GPIOB
 #define HEARTBEAT_PIN GPIO_PIN_15

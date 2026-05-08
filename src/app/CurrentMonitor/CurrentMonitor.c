@@ -54,11 +54,7 @@ bool CurrentMonitor_task_update()
     core_ADC_read_channel(CS_REF_PORT, CS_PIN, &raw_ref);
     rprintf("Raw CS: %d, Raw ref: %d, Raw current: %d\n", raw_cs, raw_ref, (raw_cs - raw_ref));
 
-    // float filt_v = (3.3f * raw_current/4096.0f);
-    // float unfilt_v = SCALE(filt_v, 0.0f, 3.03f, 0.0f, 5.0f);
-    // float current = (unfilt_v - CS_OFFSET_VOLTAGE) * CS_GAIN;
-
-    // come back to
+    // uint16_t current = (raw_cs - raw_ref) + x
     
     // if ((current < OVERCURRENT_POS_I) ||(current > OVERCURRENT_NEG_I)) core_timeout_reset(&overcurrent_timeout);
 
@@ -66,6 +62,8 @@ bool CurrentMonitor_task_update()
         // core_timeout_reset(&current_irr_timeout);
         // if (!CAN_pack_and_send_current(core_filter_update(current, &filt))) return false;
     // }
+
+
 }
 
 static void timeout_callback (core_timeout_t *timeout)

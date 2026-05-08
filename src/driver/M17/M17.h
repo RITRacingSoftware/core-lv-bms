@@ -8,6 +8,7 @@
 
 #define M17_SWPOR_TIME_MS 100
 #define M17_ADES_RESTART_TIME_MS 250
+#define M17_MAX_RET 3 // Maximum number of times the STM can unsuccessfully configure a parameter on the MAX17851
 
 #define CRC_POLY                        (0xB2)
 #define M17_HELLO_ALL                   (0x57)
@@ -79,4 +80,3 @@ bool M17_init();
 bool M17_write_ADES_reg(uint8_t dest, uint8_t reg_addr, uint16_t msg);
 bool M17_read_ADES_reg(uint8_t dest, uint8_t reg_addr, uint16_t *rxBuf, uint8_t rxLen);
 bool M17_read_ADES_block(uint8_t dest, uint8_t reg_addr, uint16_t *rxBuf, uint8_t rxLen);
-uint8_t M17_num_active_chips();

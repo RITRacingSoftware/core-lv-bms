@@ -17,8 +17,6 @@
 #include <stdio.h>
 #endif
 
-static uint8_t num_active_chips;
-
 static bool transmit_ADES_message_raw(uint8_t *msg, uint8_t len);
 static bool wake_daisy_chain();
 static bool command_hello_all();
@@ -29,11 +27,10 @@ static void send_M17_command_2byte(uint8_t addr);
 static bool reg_write(uint8_t addr, uint8_t msg);
 static uint8_t reg_read(uint8_t addr);
 static bool read_rx_buf(uint8_t *rxBuf, uint8_t len);
+static void reg_write_no_check(uint8_t addr, uint8_t msg);
 
 bool M17_init()
 {
-    // uint8_t txBuf[2] = {0x1234,0xabcd};
-    num_active_chips = 0;
     core_GPIO_init(M17_CS_PORT, M17_CS_PIN, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL);
     if (!core_SPI_init(M17_SPI, M17_CS_PORT, M17_CS_PIN)) return false;
     rprintf("Initialized SPI\n");
@@ -47,7 +44,7 @@ bool M17_init()
      * from the M17 and wait for ADES_RESTART_TIME to ensure the chip is asleep before we try to 
      * initialize again.
      */
-    reg_write(M17_SWPOR, 1);    // Restart M17 chip. Not checking for a failure in the transmission because the chip will be restarted.
+    reg_write_no_check(M17_SWPOR, 1);    // Restart M17 chip. Not checking for a failure in the transmission because the chip will be restarted.
     // Waiting for chip to turn back on
     unsigned long ADES_restartTime = HAL_GetTick();
     while (HAL_GetTick() - ADES_restartTime < M17_SWPOR_TIME_MS) {}
@@ -57,8 +54,8 @@ bool M17_init()
     while (HAL_GetTick() - ADES_restartTime < M17_ADES_RESTART_TIME_MS) {}
 
     /*** M17 CONFIG ***/
-    if (!reg_write(M17_CONFIG_GEN0, 1)) return false;                                    // CONFIG_GEN0 - Set number of chips
-    if (!reg_write(M17_CONFIG_GEN1, BAUD_RATE_2M)) return false;                                    // CxONFIG_GEN1 - Set baudrate to 2Mbps and differential UART
+    if (!reg_write(M17_CONFIG_GEN0, NUM_CHIPS)) return false;                                    // CONFIG_GEN0 - Set number of chips
+    if (!reg_write(M17_CONFIG_GEN1, BAUD_RATE_2M)) return false;                                    // CONFIG_GEN1 - Set baudrate to 2Mbps and differential UART
     if (!reg_write(M17_CONFIG_GEN3, ALRTPCKT_TIMING_1280_US)) return false;                         // CONFIG_GEN3 - Set keep-alive to 1.28ms
     if (!reg_write(M17_CONFIG_GEN4, MS_EN_MASTER_SINGLE_UART | DC_EN_DATA_RX | ALIVECOUNT_EN)) return false;     // CONFIG_GEN4 - Set single UART, enable data check byte
     if (!reg_write(M17_CONFIG_GEN5, ALRTPCKT_DBNC_16)) return false;                                // CONFIG_GEN5 - Allow 16 consecutive errors before error is flagged
@@ -66,7 +63,8 @@ bool M17_init()
     if (!check_rx_errors()) return false;
     rprintf("Initialized first part\n");
 
-    if (!wake_daisy_chain()) return false;
+
+    if (!wake_daisy_chain()) { rprintf("Failed wake\n"); return false; }
     rprintf("Woke daisy chain\n");
 
     send_M17_command_2byte(M17_CLR_RXBUF);
@@ -97,9 +95,7 @@ bool M17_write_ADES_reg(uint8_t dest, uint8_t reg_addr, uint16_t msg)
 
     // Receive transmission
     uint8_t tempBuf[6];
-
     if (!read_rx_buf(tempBuf, 6)) return false;
-
     if (!check_rx_errors()) return false;
     /*
     rprintf("Read1 begin\n");
@@ -136,9 +132,9 @@ bool M17_read_ADES_reg(uint8_t dest, uint8_t reg_addr, uint16_t *rxBuf, uint8_t 
     txBuf[4] = calculate_PEC(txBuf + 1, 3);     // PEC for txBuf[1] -> txBuf[3]
     txBuf[5] = 0x00;                            // Alive byte
 
-    if(!transmit_ADES_message_raw(txBuf, 6)) {__BKPT(2); return false;}
+    if (!transmit_ADES_message_raw(txBuf, 6)) return false;
 
-    WAIT_TIMEOUT((reg_read(M17_STATUS_RX) & RX_STOP), ADES_RX_TIMEOUT_MS, FAULT_M17, ERR_NO_RX);
+    WAIT_TIMEOUT((reg_read(M17_STATUS_RX) & RX_STOP), ADES_RX_TIMEOUT_MS, FAULT_M17, ERR_NO_RX, 0);
     
     uint8_t buf[fullLen];
     if (!read_rx_buf(buf, fullLen)) return false;
@@ -160,9 +156,9 @@ bool M17_read_ADES_block(uint8_t dest, uint8_t reg_addr, uint16_t *rxBuf, uint8_
     txBuf[5] = calculate_PEC(txBuf + 1, 4);     // PEC for txBuf[1] -> txBuf[4]
     txBuf[6] = 0x00;                            // Alive byte
 
-    if (!transmit_ADES_message_raw(txBuf, 7)) {__BKPT(2); return false;}        // Transmit length + fullLen
+    if (!transmit_ADES_message_raw(txBuf, 7)) return false;        // Transmit length + fullLen
 
-    WAIT_TIMEOUT((reg_read(M17_STATUS_RX) & RX_STOP), ADES_RX_TIMEOUT_MS, FAULT_M17, ERR_NO_RX);
+    WAIT_TIMEOUT((reg_read(M17_STATUS_RX) & RX_STOP), ADES_RX_TIMEOUT_MS, FAULT_M17, ERR_NO_RX, 0);
     
     uint8_t buf[fullLen]; 
     if (!read_rx_buf(buf, fullLen)) return false;
@@ -171,12 +167,10 @@ bool M17_read_ADES_block(uint8_t dest, uint8_t reg_addr, uint16_t *rxBuf, uint8_
     return true;
 }
 
-uint8_t M17_num_active_chips() {return num_active_chips;}
-
 static bool transmit_ADES_message_raw(uint8_t *msg, uint8_t len)
 {
     // Wait until there's a free load queue
-    WAIT_TIMEOUT(!(reg_read(M17_STATUS_TX) & TX_FULL), M17_LDQ_TIMEOUT_MS, FAULT_M17, ERR_LDQ_FULL);
+    WAIT_TIMEOUT(!(reg_read(M17_STATUS_TX) & TX_FULL), M17_LDQ_TIMEOUT_MS, FAULT_M17, ERR_LDQ_FULL, 0);
 
     // Load the queue
     uint8_t txBuf = M17_LDQ;
@@ -199,7 +193,7 @@ static bool transmit_ADES_message_raw(uint8_t *msg, uint8_t len)
     for (int i = 0; i < len; i++) {
         if (rxBuf[i] != msg[i]) {
             FaultManager_set_fault(FAULT_M17);
-            FaultManager_set_err(ERR_LDQ_READ);
+            FaultManager_set_err(ERR_LDQ_READ, 0);
             return false;
         }
     }
@@ -223,7 +217,7 @@ static bool wake_daisy_chain()
         }
     }
     FaultManager_set_fault(FAULT_M17);
-    FaultManager_set_err(ERR_NO_WAKE);
+    FaultManager_set_err(ERR_NO_WAKE, 0);
     return false;
 }
 
@@ -236,15 +230,14 @@ static bool command_hello_all()
     uint8_t rxBuf[4];
     read_rx_buf(rxBuf, 4);
 
-    // rprintf("RX EMPTY after hello all read_rx_buf: %d\n", (reg_read(M17_STATUS_RX) & RX_EMPTY)); // debug print
-
-    num_active_chips = rxBuf[2];
+    uint8_t num_active_chips = rxBuf[2];
     rprintf("From hello all: num_active_chips: %d\n", num_active_chips);
-    
-    // Set the number of active chips
-    if (!reg_write(M17_CONFIG_GEN0, num_active_chips)) return false;
-
-    return true;
+    if (num_active_chips != NUM_CHIPS) {
+        FaultManager_set_err(ERR_NUM_CHIPS_MISMATCH, 0);
+        FaultManager_set_fault(FAULT_ADES);
+        return false;
+    }
+    else return true;
 }
 
 static uint8_t calculate_PEC(uint8_t *msg, uint8_t len)
@@ -268,13 +261,13 @@ static bool check_rx_errors()
     uint8_t rxAlert = reg_read(M17_ALERT_RX);
     if (rxAlert & RX_ERR_ALRT) {
         FaultManager_set_fault(FAULT_M17);
-        FaultManager_set_err(ERR_ALERT_RX);
+        FaultManager_set_err(ERR_ALERT_RX, 0);
         return false;
     }
     
     if (rxAlert & RX_OVRFLW_ERR_ALRT) {
         FaultManager_set_fault(FAULT_M17);
-        FaultManager_set_err(ERR_ALERT_RX_OVERFLOW);
+        FaultManager_set_err(ERR_ALERT_RX_OVERFLOW, 0);
         return false;
     }
 
@@ -304,7 +297,6 @@ static bool reg_write(uint8_t addr, uint8_t msg)
 {
     uint8_t num_retransmits = 0;
     uint8_t txBuf[2] = {addr, msg};
-    uint8_t rxBuf;
 
     while (num_retransmits < M17_MAX_RET)
     {
@@ -318,10 +310,17 @@ static bool reg_write(uint8_t addr, uint8_t msg)
         if (val == msg) return true;
         else num_retransmits++;
     }
-    // FaultManager_set_fault(FAULT_M17);
-    // FaultManager_set_err(ERR_TX_NOT_WRITTEN);
-    return true;
-    // return false;
+    FaultManager_set_fault(FAULT_M17);
+    FaultManager_set_err(ERR_TX_NOT_WRITTEN, 0);
+    return false;
+}
+
+static void reg_write_no_check(uint8_t addr, uint8_t msg)
+{
+    uint8_t txBuf[2] = {addr, msg};
+    core_SPI_start(M17_SPI);
+    core_SPI_read_write(M17_SPI, txBuf, 2, NULL, 0);
+    core_SPI_stop(M17_SPI);
 }
 
 static uint8_t reg_read(uint8_t addr)
@@ -338,7 +337,7 @@ static uint8_t reg_read(uint8_t addr)
 static bool read_rx_buf(uint8_t *rxBuf, uint8_t len)
 {
     // Wait for RX STOP
-    WAIT_TIMEOUT((reg_read(M17_STATUS_RX) & RX_STOP), ADES_RX_TIMEOUT_MS, FAULT_M17, ERR_RX_TIMEOUT);
+    WAIT_TIMEOUT((reg_read(M17_STATUS_RX) & RX_STOP), ADES_RX_TIMEOUT_MS, FAULT_M17, ERR_RX_TIMEOUT, 0);
 
     uint8_t txBuf = M17_RX_RD_NXT_MSG;
     core_SPI_start(M17_SPI);
@@ -346,7 +345,7 @@ static bool read_rx_buf(uint8_t *rxBuf, uint8_t len)
     core_SPI_read_write(M17_SPI, NULL, 0, rxBuf, len);
     core_SPI_stop(M17_SPI);
 
-    // TODO: Fix this. Actually check LSSM byte.
+    // TODO: Fix this. Actuall check LSSM byte
     // Read LSSM byte
     if (rxBuf[len - 1] != M17_NORMAL_LSSM) {
         FaultManager_LSSM(rxBuf[len - 2]);
@@ -355,7 +354,8 @@ static bool read_rx_buf(uint8_t *rxBuf, uint8_t len)
     uint8_t rx_status = reg_read(M17_STATUS_RX);
     if (rx_status & (RX_ERR) || rx_status & (RX_OVRFLW_ERR)) {
         FaultManager_set_fault(FAULT_M17);
-        FaultManager_set_err(ERR_RX_STATUS);
+        FaultManager_set_err(ERR_RX_STATUS, 0);
+        return false;
     }
 
     return true;

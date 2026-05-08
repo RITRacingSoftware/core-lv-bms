@@ -31,7 +31,6 @@
 static void hardfault_error_handler();
 static void stack_overflow_error_handler();
 
-
 void task_heartbeat(void *pvParameters)
 {
     (void) pvParameters;
@@ -49,6 +48,7 @@ void task_1kHz(void *pvParameters)
     while(true)
     {
         LVBMS_1kHz();
+        // rprintf("\nRunning 1kHz task\n");
         vTaskDelayUntil(&next_wake_time, TASK_PERIOD_1KHZ_MS);
     }
 }
@@ -60,6 +60,7 @@ void task_1Hz(void *pvParameters)
     while(true)
     {
         LVBMS_1Hz();
+        rprintf("\nRunning 1Hz task\n");
         vTaskDelayUntil(&next_wake_time, TASK_PERIOD_1HZ_MS);
     }
 }
@@ -67,10 +68,9 @@ void task_1Hz(void *pvParameters)
 void task_CAN_tx(void *pvParameters)
 {
     (void) pvParameters;
-    CAN_task_update();
     if (!CAN_tx()) hardfault_error_handler();
+    rprintf("\nRunning CAN task\n");
 }
-
 
 int main(void) 
 {
@@ -79,18 +79,6 @@ int main(void)
     if (!LVBMS_init()) hardfault_error_handler();
 
     int err;
-    
-    // err = xTaskCreate(task_CAN_tx, // task code
-    //     "CAN_tx", // pcName
-    //     1000, // uxStackDepth
-    //     NULL, // pvParameters
-    //     CAN_TX_PRIORITY, // uxPriority
-    //     NULL); // pass handle
-        
-    //     if (err != pdPASS) {
-    //         rprintf("CAN task failed created");
-    //         hardfault_error_handler();
-    //     }
         
     err = xTaskCreate(task_heartbeat,
         "task_heartbeat",
@@ -126,6 +114,18 @@ int main(void)
         hardfault_error_handler();
     }
 
+    err = xTaskCreate(task_CAN_tx, // task code
+    "CAN_tx", // pcName
+    1000, // uxStackDepth
+    NULL, // pvParameters
+    CAN_TX_PRIORITY, // uxPriority
+    NULL); // pass handle
+    
+    if (err != pdPASS) {
+        hardfault_error_handler();
+    }
+
+
     NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
 
     vTaskStartScheduler();
@@ -138,7 +138,7 @@ int main(void)
 
 // Called when stack overflows from rtos
 // Not needed in header, since included in FreeRTOS-Kernel/include/task.h
-void vApplicationStackOverflowHook( TaskHandle_t xTask, char *pcTaskName) 
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) 
 {
     (void) xTask;
     (void) pcTaskName;
