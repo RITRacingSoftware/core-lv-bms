@@ -56,9 +56,6 @@ bool LVBMS_1Hz()
 
 bool LVBMS_1kHz()
 {
-    // if (!CurrentMonitor_task_update()) {
-    //     return false;
-    // }
-    // core_timeout_check_all();
+    core_timeout_check_all();
     return true;
 }

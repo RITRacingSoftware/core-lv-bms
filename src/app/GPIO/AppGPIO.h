@@ -32,4 +32,4 @@
 
 void GPIO_init();
 void GPIO_Task_Update();
-void GPIO_set_shutdown_pin(bool state);
+void LV_shutdown();

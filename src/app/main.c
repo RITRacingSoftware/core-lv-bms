@@ -48,7 +48,6 @@ void task_1kHz(void *pvParameters)
     while(true)
     {
         LVBMS_1kHz();
-        // rprintf("\nRunning 1kHz task\n");
         vTaskDelayUntil(&next_wake_time, TASK_PERIOD_1KHZ_MS);
     }
 }
@@ -60,7 +59,6 @@ void task_1Hz(void *pvParameters)
     while(true)
     {
         LVBMS_1Hz();
-        rprintf("\nRunning 1Hz task\n");
         vTaskDelayUntil(&next_wake_time, TASK_PERIOD_1HZ_MS);
     }
 }
@@ -69,7 +67,6 @@ void task_CAN_tx(void *pvParameters)
 {
     (void) pvParameters;
     if (!CAN_tx()) hardfault_error_handler();
-    rprintf("\nRunning CAN task\n");
 }
 
 int main(void) 

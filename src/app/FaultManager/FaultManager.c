@@ -13,12 +13,11 @@ static uint64_t errorList = 0;
 
 void FaultManager_set_fault(uint64_t faultCode) 
 {
-    ChargeMonitor_set_state(ChargeState_CONNECTED_FAULTED);
     if (!(faultList & faultCode)) {
         faultList |= faultCode;
         if (!(faultList & ignoreList)) {
             faultList |= FAULT_SHUTDOWN;
-            GPIO_set_shutdown_pin(false);
+            LV_shutdown();
             CAN_send_faults_errors(faultList, errorList);
         }
     }

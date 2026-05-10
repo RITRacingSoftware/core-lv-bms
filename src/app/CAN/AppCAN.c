@@ -27,7 +27,6 @@ bool CAN_init()
 
 bool CAN_tx()
 {
-    rprintf("\n\n running CAN tx \n\n");
     if (!core_CAN_send_from_tx_queue_task(CAN_SEC)) return false;
     return true;
 }
